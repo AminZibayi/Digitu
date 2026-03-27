@@ -227,10 +227,18 @@ function validateProduct(product) {
   const imagePaths = parseStrings(product.image_paths);
   if (!imagePaths.length) {
     errors.push("At least one image_path is required");
+  } else if (imagePaths.length < 2) {
+    errors.push("At least 2 image_paths are required for finalization (Digikala publish rule)");
   } else {
     imagePaths.forEach((imagePath) => {
       if (!fs.existsSync(imagePath)) {
         errors.push(`Image not found: ${imagePath}`);
+        return;
+      }
+
+      const ext = imagePath.split(".").pop()?.toLowerCase();
+      if (ext !== "jpg" && ext !== "jpeg") {
+        errors.push(`Image format must be JPG/JPEG: ${imagePath}`);
       }
     });
   }

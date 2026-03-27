@@ -14,6 +14,7 @@ const path = require("path");
 const { parse } = require("csv-parse/sync");
 const FormData = require("form-data");
 const fetch = require("node-fetch");
+require("dotenv").config({ path: ".env", quiet: true });
 
 // ────────────────────────────────────────────────────────────
 // CONFIGURATION — update your session cookies here
@@ -117,6 +118,10 @@ function addStringAttr(target, attrId, value) {
   if (s) target[attrId] = s;
 }
 
+function attrsToIdValueArray(attrMap) {
+  return Object.entries(attrMap).map(([id, value]) => ({ id: Number(id), value }));
+}
+
 function baseHeaders(extra = {}) {
   return {
     accept: "application/json, text/plain, */*",
@@ -160,7 +165,7 @@ async function apiCall(method, endpoint, body = null) {
 // Returns: draftProductId (number)
 // ────────────────────────────────────────────────────────────
 async function saveBasicInfo(p) {
-  const data = await apiCall("POST", "/product-creation/save", {
+  const data = await apiCall("POST", "/product-creation/product/detail/validation", {
     category_id: CATEGORY_ID,
     division_id: p.division_id,
     brand_id: p.brand_id,
@@ -168,13 +173,28 @@ async function saveBasicInfo(p) {
     product_type_ids: p.product_type_ids,
     is_iranian: p.is_iranian,
     product_classes: p.product_classes,
+    fake_reasons: [],
     general_mefa_id: p.general_mefa_id,
-    exclusive_mefa_id: "",
+    exclusive_mefa_id: null,
     fake: false,
+    package_width: p.package_width || 0,
+    package_height: p.package_height || 0,
+    package_length: p.package_length || 0,
+    package_weight: p.package_weight || 0,
+    advantages: p.advantages,
+    disadvantages: p.disadvantages,
+    only_cf_fields: {
+      status: "marketable",
+      platforms: ["digikala"],
+      other_titles: [],
+    },
   });
 
-  // Response nesting varies — handle both shapes
-  const draftId = data?.data?.draft_product_id ?? data?.draft_product_id ?? data?.id;
+  if (data?.is_valid === false) {
+    throw new Error(`Basic info validation failed: ${JSON.stringify(data?.errors || data)}`);
+  }
+
+  const draftId = data?.draft_product_id ?? data?.bind?.draft_product_id ?? data?.id;
 
   if (!draftId) {
     throw new Error(`No draft_product_id in response: ${JSON.stringify(data)}`);
@@ -209,21 +229,14 @@ async function saveAttributes(draftId, p) {
   if (!attrPayload[ATTR.EXTRA_DESCRIPTION]) addStringAttr(attrPayload, ATTR.EXTRA_DESCRIPTION, p.attr_description);
   if (!attrPayload[ATTR.FRAME_THICKNESS_MM]) addStringAttr(attrPayload, ATTR.FRAME_THICKNESS_MM, p.attr_piece_count);
 
-  await apiCall("POST", "/product-creation/save", {
+  await apiCall("POST", "/product-creation/attributes", {
     draft_product_id: draftId,
     category_id: CATEGORY_ID,
-    attributes: { [CATEGORY_ID]: attrPayload },
-    advantages: p.advantages,
-    disadvantages: p.disadvantages,
-    // All dimensions in mm / grams per Digikala spec
-    package_width: p.package_width || null,
-    package_height: p.package_height || null,
-    package_length: p.package_length || null,
-    package_weight: p.package_weight || null,
-    width: p.width || 0,
-    height: p.height || 0,
-    length: p.length || 0,
-    weight: p.weight || 0,
+    attributes: attrsToIdValueArray(attrPayload),
+    width: p.width || null,
+    height: p.height || null,
+    length: p.length || null,
+    weight: p.weight || null,
   });
 }
 
