@@ -352,6 +352,10 @@ async function processProduct(p, index) {
   }
 }
 
+function hasValidCookie() {
+  return !!CONFIG.cookie && !CONFIG.cookie.includes("YOUR_JWT_ACCESS_TOKEN");
+}
+
 // ────────────────────────────────────────────────────────────
 // CSV PARSER
 // Expected columns (see products.csv template):
@@ -456,17 +460,25 @@ async function main() {
     process.exit(1);
   }
 
-  if (!CONFIG.cookie || CONFIG.cookie.includes("YOUR_JWT_ACCESS_TOKEN")) {
-    console.error("Missing valid cookie. Set DIGIKALA_COOKIE env var or edit CONFIG.cookie in digikala-uploader.js");
-    process.exit(1);
+  const products = parseCSV(csvFile);
+  await runUpload(products, { sourceLabel: csvFile });
+}
+
+async function runUpload(products, options = {}) {
+  const { sourceLabel = "(in-memory)", outFile = "upload_results.json" } = options;
+
+  if (!Array.isArray(products) || products.length === 0) {
+    throw new Error("No products to upload");
+  }
+
+  if (!hasValidCookie()) {
+    throw new Error("Missing valid cookie. Set DIGIKALA_COOKIE env var or update .env");
   }
 
   console.log("=".repeat(52));
   console.log("  Digikala Bulk Product Uploader — تابلو (6946)");
   console.log("=".repeat(52));
-  console.log(`CSV: ${csvFile}\n`);
-
-  const products = parseCSV(csvFile);
+  console.log(`Source: ${sourceLabel}\n`);
   console.log(`Found ${products.length} product(s) to upload.\n`);
 
   const results = [];
@@ -493,12 +505,20 @@ async function main() {
     fail.forEach((r) => console.log(`  ✗ "${r.title}": ${r.error}`));
   }
 
-  const outFile = "upload_results.json";
   fs.writeFileSync(outFile, JSON.stringify(results, null, 2), "utf-8");
   console.log(`\nFull log saved → ${outFile}`);
+  return results;
 }
 
-main().catch((err) => {
-  console.error("\nFatal error:", err.message);
-  process.exit(1);
-});
+module.exports = {
+  parseCSV,
+  runUpload,
+  processProduct,
+};
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("\nFatal error:", err.message);
+    process.exit(1);
+  });
+}

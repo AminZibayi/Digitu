@@ -109,17 +109,10 @@ node cli.js --dry-run products.csv
 pnpm run dry-run
 ```
 
-### اجرای مستقیم آپلودر اصلی
+نکته:
 
-```bash
-node digikala-uploader.js products.csv
-```
-
-یا:
-
-```bash
-pnpm run uploader
-```
+- ورود کاربر فقط از طریق `cli.js` است.
+- اجرای مستقیم `digikala-uploader.js` برای کاربران نهایی توصیه نمی‌شود.
 
 ## 6) ترتیب واقعی مراحل API
 

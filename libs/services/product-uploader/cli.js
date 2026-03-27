@@ -23,6 +23,7 @@
 const fs = require("fs");
 const readline = require("readline");
 const { parse } = require("csv-parse/sync");
+const uploader = require("./digikala-uploader");
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONSTANTS & CONFIGURATION
@@ -37,7 +38,7 @@ const DIVISIONS = {
   "تابلو پازل": [9655],
 };
 
-const SUPPORTED_COMMANDS = new Set(["help", "validate", "upload", "dry-run", "auto"]);
+const SUPPORTED_COMMANDS = new Set(["help", "validate", "upload", "dry-run"]);
 
 const MEFA_IDS = {
   domestic: 893,
@@ -445,9 +446,9 @@ function showHelp() {
   console.log("\n" + colors.bright + "COMMANDS:" + colors.reset);
   console.log("  --help              Show this help message");
   console.log("  --validate FILE     Validate CSV file only");
-  console.log("  --upload FILE       Validate + review + uploader handoff");
-  console.log("  --dry-run FILE      Validate/review only (no uploader handoff)");
-  console.log("  --auto FILE         Validate without interactive review");
+  console.log("  --upload FILE       Validate + review + upload (single entry point)");
+  console.log("  --dry-run FILE      Validate/review only (no API upload)");
+  console.log("  --auto              Skip interactive review");
 
   console.log("\n" + colors.bright + "OPTIONS:" + colors.reset);
   console.log("  --no-review         Skip interactive review");
@@ -463,8 +464,7 @@ function showHelp() {
   console.log("  See CSV-SPEC.md for detailed column documentation");
 
   console.log("\n" + colors.bright + "CONFIGURATION:" + colors.reset);
-  console.log("  Uploader auth: Set DIGIKALA_COOKIE environment variable");
-  console.log("  Or edit digikala-uploader.js CONFIG.cookie directly");
+  console.log("  Set DIGIKALA_COOKIE environment variable (or .env)");
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -526,7 +526,7 @@ async function main() {
       if (!valid) {
         warning("Dry run completed with validation errors.");
       } else {
-        success("Dry run completed. Data is valid for uploader handoff.");
+        success("Dry run completed. Data is valid for CLI upload.");
       }
       return;
     }
@@ -542,12 +542,14 @@ async function main() {
       }
     }
 
+    let productsToUpload;
+
     // Interactive review
     if (!args.includes("--no-review") && !args.includes("--auto")) {
       const reviewed = await reviewAllProducts(products);
 
       // Filter out skipped products
-      const productsToUpload = reviewed.filter((p) => !p._skip);
+      productsToUpload = reviewed.filter((p) => !p._skip);
       const skipped = reviewed.filter((p) => p._skip).length;
 
       if (skipped > 0) {
@@ -563,25 +565,51 @@ async function main() {
         await closeReadline();
         return;
       }
+
+      const reviewedByRow = new Map(reviewed.map((p) => [p._row, p]));
+      const parsedForUpload = uploader.parseCSV(csvFile);
+
+      productsToUpload = parsedForUpload
+        .filter((p) => !reviewedByRow.get(p._row)?._skip)
+        .map((parsedProduct) => {
+          const reviewedProduct = reviewedByRow.get(parsedProduct._row);
+          if (!reviewedProduct) return parsedProduct;
+
+          // Preserve inline edits made during review.
+          parsedProduct.title_fa = reviewedProduct.title_fa;
+          parsedProduct.title_en = reviewedProduct.title_en || "";
+          parsedProduct.model = reviewedProduct.model;
+          parsedProduct.brand_id = parseInt(reviewedProduct.brand_id);
+          return parsedProduct;
+        });
     } else {
       log("Skipping interactive review (--no-review or --auto)", "dim");
+      productsToUpload = uploader.parseCSV(csvFile);
+    }
+
+    if (!productsToUpload.length) {
+      warning("No products selected for upload.");
+      await closeReadline();
+      return;
     }
 
     // Display summary
     header("Upload Summary");
-    products.forEach((p) => {
+    productsToUpload.forEach((p) => {
       const title = p.title_fa || p.model || `Row ${p._row}`;
-      if (!p._skip && p._errors.length === 0) {
-        success(`Row ${p._row}: ${title}`);
-      }
+      success(`Row ${p._row}: ${title}`);
     });
 
-    log(
-      "\n" + colors.bright + "To complete the upload, use: node digikala-uploader.js " + csvFile + colors.reset,
-      "cyan"
-    );
+    header("Uploading Products");
+    const uploadResults = await uploader.runUpload(productsToUpload, { sourceLabel: csvFile });
+    const failedCount = uploadResults.filter((r) => r.status === "failed").length;
 
-    success("CSV validation and review complete!");
+    if (failedCount > 0) {
+      warning(`Upload completed with ${failedCount} failure(s). See upload_results.json for details.`);
+      process.exitCode = 1;
+    } else {
+      success("Upload completed successfully from CLI.");
+    }
   } catch (err) {
     error(`Error: ${err.message}`);
     process.exit(1);

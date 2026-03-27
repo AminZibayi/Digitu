@@ -61,9 +61,6 @@ A comprehensive Node.js CLI tool for automatically adding products to Digikala v
 
    # Start interactive upload
    node cli.js --upload products.csv
-
-   # Or use the full uploader with all features
-   node digikala-uploader.js products.csv
    ```
 
 ---
@@ -134,7 +131,7 @@ digikala-uploader.js        Complete uploader with all API calls
 ├── Image uploads
 ├── Batch processing
 ├── Error recovery & retry
-└── Results logging
+└── Results logging (invoked by cli.js)
 
 cli.js                      Interactive CLI tool
 ├── CSV validation
@@ -179,7 +176,7 @@ node cli.js --upload products.csv
 # 2. Validate all products
 # 3. Review each product (edit/skip/continue)
 # 4. Confirm before upload
-# 5. Call digikala-uploader.js
+# 5. Upload starts automatically from CLI
 ```
 
 ### Batch Upload (Auto)
@@ -298,7 +295,7 @@ cat upload_results.json
 # Shows:
 # ✓ Successful uploads (product_id assigned)
 # ✗ Failed uploads (error message)
-# → Retry failures with: node digikala-uploader.js products.csv --resume
+# → Retry failures with: node cli.js --upload products.csv
 ```
 
 ---
@@ -309,7 +306,7 @@ cat upload_results.json
 
 ```
 Error: seller_api_access_token not found
-→ Check CONFIG.cookie in digikala-uploader.js
+→ Check DIGIKALA_COOKIE in .env or environment variables
 → Token expired? Update from browser DevTools
 → PHPSESSID also expired? Re-login to Digikala
 ```
@@ -330,7 +327,7 @@ Error: Image not found: images/photo.jpg
 → Ensure image file exists
 → Use relative paths from current directory
 → Check file permissions (readable)
-→ Supported formats: JPG, PNG, GIF, WebP
+→ Supported formats: JPG/JPEG only
 ```
 
 ### Rate Limiting
@@ -348,7 +345,7 @@ Error: Too many requests
 Error: Request timeout
 → Network connection issue
 → Digikala API temporarily down
-→ Resume with: node digikala-uploader.js products.csv --resume
+→ Retry with: node cli.js --upload products.csv
 ```
 
 ### CSV Format Issues
@@ -382,7 +379,7 @@ Error: Invalid painting_type
    ```bash
    # ✓ Good: Set as environment variable
    export DIGIKALA_COOKIE="your_token"
-   # Then use in digikala-uploader.js
+   # Then run with cli.js
 
    # ✗ Avoid: Hardcoding in git repo
    # Don't: Push CONFIG.cookie to GitHub
@@ -446,7 +443,7 @@ node cli.js --validate products.csv
 ```bash
 # Create test.csv with just 1 product
 # Run full upload
-node digikala-uploader.js test.csv
+node cli.js --upload test.csv
 
 # Monitor successful upload before batching
 # Check upload_results.json for product_id
@@ -465,7 +462,7 @@ CONFIG.delayBetweenProducts = 3000;  // 3 seconds
 CONFIG.delayBetweenSteps = 1000;     // 1 second
 
 # Run overnight or on schedule:
-node digikala-uploader.js products.csv &
+node cli.js --upload products.csv --auto
 
 # Monitor with:
 tail -f upload_results.json
@@ -478,7 +475,7 @@ tail -f upload_results.json
 # upload.sh - Schedule with cron
 
 cd /path/to/project
-node digikala-uploader.js products.csv >> upload.log 2>&1
+node cli.js --upload products.csv --auto >> upload.log 2>&1
 echo "Upload complete: $(date)" >> upload.log
 
 # Add to crontab:
@@ -491,10 +488,8 @@ echo "Upload complete: $(date)" >> upload.log
 # If upload is interrupted:
 # 1. Check upload_results.json
 # 2. Fix any failed products
-# 3. Resume:
-node digikala-uploader.js products.csv --resume
-
-# Only retries products that failed
+# 3. Retry:
+node cli.js --upload products.csv
 ```
 
 ---
@@ -550,7 +545,7 @@ console.log('Response:', JSON.stringify(json, null, 2));
 export DEBUG=digikala:*
 
 # Run with debug output
-DEBUG=digikala:* node digikala-uploader.js products.csv
+DEBUG=digikala:* node cli.js --upload products.csv
 ```
 
 ---
@@ -571,7 +566,7 @@ DEBUG=digikala:* node digikala-uploader.js products.csv
 - Brand ID: Any valid Digikala brand
 - Product type: One or more painting types
 - Title: Persian title required, English optional
-- Images: At least 1 (main image will be first)
+- Images: At least 2 JPG/JPEG images (first image will be main)
 
 **Default MEFA ID:** 893 (domestic)
 
