@@ -1,0 +1,50 @@
+{
+  "name": "digikala-auto-uploader",
+  "version": "1.0.0",
+  "description": "Automated bulk product uploader for Digikala Seller Platform - Category 6946 (تابلو)",
+  "main": "cli.js",
+  "bin": {
+    "digikala": "cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "validate": "node cli.js --validate products.csv",
+    "upload": "node cli.js --upload products.csv",
+    "dry-run": "node cli.js --dry-run products.csv",
+    "help": "node cli.js --help",
+    "uploader": "node digikala-uploader.js products.csv",
+    "resume": "node digikala-uploader.js products.csv --resume"
+  },
+  "keywords": [
+    "digikala",
+    "seller",
+    "automation",
+    "bulk-upload",
+    "csv",
+    "api",
+    "إيران",
+    "farsi",
+    "persian"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.0",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/digikala-auto-uploader"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/digikala-auto-uploader/issues"
+  },
+  "homepage": "https://github.com/yourusername/digikala-auto-uploader#readme"
+}
