@@ -1,153 +1,65 @@
-# Digikala Seller API Specification
+# Digikala Seller API Spec (Category 6946)
 
-**Version:** 1.0  
-**Category:** تابلو (Picture/Tableau) - ID: 6946  
-**Base URL:** https://seller.digikala.com/api/v2
-
----
+Version: 2.0
+Category: تابلو (6946)
+Base URL: `https://seller.digikala.com/api/v2`
 
 ## Authentication
 
-All requests require the following headers:
+All requests require a valid seller cookie (session + JWT), sent via `cookie` header.
 
-```
-accept: application/json, text/plain, */*
-accept-language: en-US,en;q=0.7
-content-type: application/json (for POST requests)
-cookie: [seller_api_access_token (JWT), PHPSESSID, tracker_session, seller_api_otp_token]
-referer: https://seller.digikala.com/pwa/product/create/1
-x-web-optimize-response: 1
-sec-fetch-site: same-origin
-sec-fetch-mode: cors
-sec-fetch-dest: empty
-```
+Required cookie parts in practice:
 
-**Token Expiration:** The JWT (`seller_api_access_token`) expires and must be refreshed from browser DevTools.
+- `PHPSESSID`
+- `tracker_session`
+- `seller_api_access_token`
+- `seller_api_otp_token`
 
----
+Uploader source:
 
-## API Endpoints
+- `DIGIKALA_COOKIE` env var
+- fallback: `CONFIG.cookie` in `digikala-uploader.js`
 
-### 1. Get Category Tree (for reference)
+## Core Endpoints
 
-**GET** `/categories/tree`
+### 1) Create/Update Draft
 
-Returns hierarchical list of all product categories.
+`POST /product-creation/save`
 
-**Query Parameters:**
+Used in three phases:
 
-- `categoryId` (optional, integer): Filter to specific category
+- phase A: basic info and draft creation
+- phase B: attributes and dimensions
+- phase C: finalization with image IDs
 
-**Response:**
+### 2) Save Auto Title
 
-```json
-{
-  "status": "ok",
-  "data": {
-    "items": [
-      {
-        "id": 6946,
-        "title": "تابلو",
-        "leaf": true,
-        "theme": null
-      }
-    ]
-  }
-}
-```
+`POST /product-creation/auto-title/save`
 
----
+### 3) Upload Image
 
-### 2. Get Category Details
+`POST /product-creation/images/upload`
 
-**GET** `/categories/{categoryId}`
+- multipart form-data
+- fields: `file`, `slot`
 
-Get specific category information including parent hierarchy.
+### 4) Category Validation Metadata
 
-**Example:**  
-`GET /categories/6946?categoryId=6946`
-
-**Response:**
-
-```json
-{
-  "status": "ok",
-  "data": {
-    "category": {
-      "id": 6946,
-      "title": "تابلو",
-      "active": true,
-      "is_leaf": true
-    },
-    "parents": [
-      [
-        {
-          "id": 5967,
-          "title_fa": "خانه و آشپزخانه",
-          "is_leaf": false,
-          "level": 1
-        }
-      ]
-    ]
-  }
-}
-```
-
----
-
-### 3. Get Category Validation Schema
-
-**GET** `/product-creation/category/{categoryId}/validation`
-
-Retrieves validation rules, required fields, and brand/attribute options for the category.
-
-**Example:**  
 `GET /product-creation/category/6946/validation`
 
-**Response Structure:**
+Used to resolve valid brands/options/attribute choices.
 
-```json
-{
-  "status": "ok",
-  "data": {
-    "isValid": true,
-    "bind": {
-      "brands": [
-        {
-          "id": "9",
-          "text": "توشیبا Toshiba",
-          "title_fa": "توشیبا",
-          "title_en": "Toshiba",
-          "logo_id": "https://dkstatics-public.digikala.com/..."
-        }
-      ]
-    }
-  }
-}
-```
+## Payload Contracts
 
----
-
-### 4. Save Product (Create/Update Draft)
-
-**POST** `/product-creation/save`
-
-Creates a new product draft or updates an existing one. Used for multiple steps:
-
-- Basic product info + category setup
-- Attributes and dimensions
-- Finalization with images
-
-**Request Body Structure:**
-
-**Step 1: Basic Info**
+### A) Basic Info Save
 
 ```json
 {
   "category_id": 6946,
+  "division_id": 4928,
   "brand_id": 719,
-  "model": "مدل-طبیعت-001",
-  "product_type_ids": [4928],
+  "model": "تابلو فرض",
+  "product_type_ids": [24054],
   "is_iranian": true,
   "product_classes": ["2"],
   "general_mefa_id": 893,
@@ -156,7 +68,12 @@ Creates a new product draft or updates an existing one. Used for multiple steps:
 }
 ```
 
-**Step 2: Attributes & Dimensions**
+Important:
+
+- `division_id` is not the same thing as `product_type_ids`.
+- both are expected in real payload flow.
+
+### B) Attribute Save
 
 ```json
 {
@@ -164,26 +81,46 @@ Creates a new product draft or updates an existing one. Used for multiple steps:
   "category_id": 6946,
   "attributes": {
     "6946": {
-      "4931": [21209, 21210], // ATTR.SUBJECT
-      "5127": [15907], // ATTR.TECHNIQUE
-      "119": "توضیحات محصول", // ATTR.DESCRIPTION
-      "10130": "1" // ATTR.PIECE_COUNT
+      "4931": [21209, 21210],
+      "5127": [15907],
+      "5218": [14500],
+      "6597": "زیبا",
+      "8482": [52502],
+      "10043": [51393],
+      "10129": "آبی",
+      "10132": [52453],
+      "119": "توضیحات",
+      "5065": [19139],
+      "5080": [19150],
+      "7830": [35285],
+      "10130": "12",
+      "10131": [52450]
     }
   },
-  "advantages": ["رنگ‌آمیزی با کیفیت", "ماندگاری بالا"],
-  "disadvantages": ["حساس به رطوبت"],
-  "width": 400,
-  "height": 600,
-  "length": 5,
-  "weight": 800,
-  "package_width": 420,
-  "package_height": 620,
-  "package_length": 30,
-  "package_weight": 900
+  "advantages": ["رنگ خوب"],
+  "disadvantages": ["گرد و تیز"],
+  "width": 0,
+  "height": 0,
+  "length": 0,
+  "weight": 0,
+  "package_width": null,
+  "package_height": null,
+  "package_length": null,
+  "package_weight": null
 }
 ```
 
-**Step 3: Finalization with Images**
+### C) Title Save
+
+```json
+{
+  "draft_product_id": 6977605,
+  "title_fa": "تابلو طرح زیبا مدل تابلو فرض فریم آبی",
+  "title_en": ""
+}
+```
+
+### D) Finalization Save
 
 ```json
 {
@@ -191,176 +128,71 @@ Creates a new product draft or updates an existing one. Used for multiple steps:
   "draft_product_id": 6977605,
   "only_b2b": false,
   "photos_detail": {
-    "main_image": "encrypted_id_1",
-    "order": "encrypted_id_1,encrypted_id_2",
-    "images": [{ "encrypted_id": "encrypted_id_1", "active": true }, { "encrypted_id": "encrypted_id_2" }]
+    "main_image": "7RyIf",
+    "order": "7RyIf,7RyIi",
+    "images": [{ "encrypted_id": "7RyIf", "active": true }, { "encrypted_id": "7RyIi" }]
   }
 }
 ```
 
-**Response:**
+## Category Constants (6946)
 
-```json
-{
-  "status": "ok",
-  "data": {
-    "draft_product_id": 6977605,
-    "product_id": 123456789
-  }
-}
-```
+### Known Divisions
 
----
+- `4928`: تابلو
+- `9657`: تابلو نوری
+- `9655`: تابلو پازل
 
-### 5. Save Product Title
+### Known Product Type (observed)
 
-**POST** `/product-creation/auto-title/save`
+- `24054`: ساده
 
-Updates the product Persian and English titles.
+### Known General MEFA
 
-**Request Body:**
+- `893`: domestic
+- `894`: imported
 
-```json
-{
-  "draft_product_id": 6977605,
-  "title_fa": "تابلو نقاشی طرح طبیعت مدل 001",
-  "title_en": "Nature Painting Model 001"
-}
-```
+## Attribute ID Map (Observed)
 
-**Response:**
+- `4931`: نوع کاربرد (multi)
+- `5127`: تعداد تکه (select)
+- `5218`: ویژگی ظاهری تابلو (select)
+- `6597`: طرح (text)
+- `8482`: نوع تابلو (multi)
+- `10043`: جنس قاب تابلو (multi)
+- `10129`: رنگ فریم (text)
+- `10132`: محافظ سطح (select)
+- `119`: سایر توضیحات (text)
+- `5065`: مقاوم در برابر (select)
+- `5080`: نحوه شست وشو (select)
+- `7830`: طرح کلی (select)
+- `10130`: ضخامت فریم (text/number-as-string)
+- `10131`: نوع چاپ (select)
 
-```json
-{
-  "status": "ok",
-  "data": {}
-}
-```
+## Required vs Recommended
 
----
+Hard-required for stable upload flow:
 
-### 6. Upload Product Image
+- `category_id`, `division_id`, `brand_id`, `model`, `product_type_ids`
+- `general_mefa_id`
+- `draft_product_id` in non-create phases
+- `title_fa`
+- at least one uploaded image id in finalization
 
-**POST** `/product-creation/images/upload`
+Recommended for approval quality:
 
-Upload a product image using multipart form-data.
+- meaningful attributes for category
+- non-empty `advantages` / `disadvantages`
+- realistic packaging fields
 
-**Request:**
+## Error Handling
 
-- Content-Type: `multipart/form-data`
-- Form Fields:
-  - `file` (binary): Image file
-  - `slot` (integer): Image position (1, 2, 3, ...)
+Treat responses as failed when `status !== "ok"` even if HTTP code is 200.
 
-**Example cURL:**
+## Pacing
 
-```bash
-curl -X POST https://seller.digikala.com/api/v2/product-creation/images/upload \
-  -H "Cookie: ..." \
-  -F "file=@/path/to/image.jpg" \
-  -F "slot=1"
-```
+Configured in uploader:
 
-**Response:**
-
-```json
-{
-  "status": "ok",
-  "data": {
-    "id": "encrypted_image_id_string",
-    "timestamp": 1697123456
-  }
-}
-```
-
----
-
-## Constants for Category 6946 (تابلو)
-
-### Product Type IDs
-
-```
-تابلو (Regular Picture):     4928
-تابلو نوری (Light Picture):  9657
-تابلو پازل (Puzzle):         9655
-```
-
-### General MEFA ID (Origin)
-
-```
-domestic (تولید داخل):  893
-imported (وارداتی):      894
-```
-
-### Attribute IDs
-
-| ID    | Name (FA)  | Type   | Notes                                     |
-| ----- | ---------- | ------ | ----------------------------------------- |
-| 4931  | موضوع      | Multi  | Subject/Theme - pipe-separated option IDs |
-| 5127  | تکنیک      | Multi  | Technique - pipe-separated option IDs     |
-| 119   | توضیحات    | Text   | Description - free text                   |
-| 10130 | تعداد قطعه | Number | Piece count - string representation       |
-
-### Required Fields
-
-- ✅ `category_id` (always 6946)
-- ✅ `brand_id` (integer, valid brand)
-- ✅ `model` (string, product model)
-- ✅ `product_type_ids` (array, at least one painting type)
-- ✅ `title_fa` (Persian title)
-- ✅ `title_en` (English title)
-- ✅ `general_mefa_id` (893 or 894)
-- ✅ At least one image file
-
-### Optional Fields
-
-- `is_iranian` (boolean, default: true)
-- `product_classes` (pipe-separated class IDs)
-- `exclusive_mefa_id` (advanced feature, usually empty)
-- `attr_subject_ids` (attribute values)
-- `attr_technique_ids` (attribute values)
-- `attr_description` (text)
-- `attr_piece_count` (number as string)
-- `advantages` (pipe-separated list)
-- `disadvantages` (pipe-separated list)
-- `width`, `height`, `length`, `weight` (dimensions in cm/kg)
-- `package_*` (packaging dimensions)
-
----
-
-## Rate Limiting & Delays
-
-To avoid hitting rate limits:
-
-- **Between products:** 2000 ms (2 seconds)
-- **Between API steps:** 600 ms (0.6 seconds)
-- **Between image uploads:** 300 ms
-
----
-
-## Error Response Format
-
-All errors return with status code 200 but `result.status !== 'ok'`:
-
-```json
-{
-  "status": "failed",
-  "message": "Error message",
-  "errors": {
-    "field_name": "Error detail"
-  }
-}
-```
-
----
-
-## Example Flow for One Product
-
-1. **POST** `/product-creation/save` with basic info → get `draft_product_id`
-2. Wait 600ms
-3. **POST** `/product-creation/save` with attributes
-4. Wait 600ms
-5. **POST** `/product-creation/auto-title/save` with titles
-6. Wait 300ms × (number of images)
-7. **POST** `/product-creation/images/upload` for each image
-8. **POST** `/product-creation/save` with image encrypted IDs for finalization
+- between products: 2000 ms
+- between phases: 600 ms
+- between images: ~300 ms

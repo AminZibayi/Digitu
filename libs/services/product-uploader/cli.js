@@ -8,7 +8,7 @@
  * 1. Load a CSV file with product data
  * 2. Validate all data against Digikala API requirements
  * 3. Review and edit products interactively
- * 4. Upload products to Digikala Seller Platform
+ * 4. Prepare products for uploader execution
  *
  * Usage:
  *   node cli.js [--help|--validate|--upload|--dry-run]
@@ -21,7 +21,6 @@
 "use strict";
 
 const fs = require("fs");
-const path = require("path");
 const readline = require("readline");
 const { parse } = require("csv-parse/sync");
 
@@ -32,11 +31,13 @@ const { parse } = require("csv-parse/sync");
 const CATEGORY_ID = 6946;
 const BASE_API_URL = "https://seller.digikala.com/api/v2";
 
-const PAINTING_TYPES = {
+const DIVISIONS = {
   تابلو: [4928],
   "تابلو نوری": [9657],
   "تابلو پازل": [9655],
 };
+
+const SUPPORTED_COMMANDS = new Set(["help", "validate", "upload", "dry-run", "auto"]);
 
 const MEFA_IDS = {
   domestic: 893,
@@ -48,7 +49,11 @@ const MEFA_IDS = {
 const CSV_COLUMNS = [
   "brand_id",
   "model",
+  "division_id",
+  "division_label",
   "painting_type",
+  "product_type_ids",
+  "product_type_label",
   "is_iranian",
   "product_classes",
   "general_mefa_id",
@@ -71,7 +76,7 @@ const CSV_COLUMNS = [
   "image_paths",
 ];
 
-const REQUIRED_FIELDS = ["brand_id", "model", "painting_type", "general_mefa_id", "title_fa", "image_paths"];
+const REQUIRED_FIELDS = ["brand_id", "model", "general_mefa_id", "title_fa", "image_paths"];
 
 // ─────────────────────────────────────────────────────────────────────────
 // UTILITIES
@@ -198,8 +203,13 @@ function validateProduct(product) {
     errors.push("model is required");
   }
 
-  if (!product.painting_type || !PAINTING_TYPES[product.painting_type]) {
-    errors.push(`painting_type must be one of: ${Object.keys(PAINTING_TYPES).join(", ")}`);
+  const hasDivisionId = !!product.division_id && !isNaN(parseInt(product.division_id));
+  const hasDivisionLabel = !!product.division_label && !!DIVISIONS[product.division_label];
+  const hasLegacyPaintingType = !!product.painting_type && !!DIVISIONS[product.painting_type];
+  if (!hasDivisionId && !hasDivisionLabel && !hasLegacyPaintingType) {
+    errors.push(
+      `division is required: provide division_id, division_label, or painting_type (${Object.keys(DIVISIONS).join(", ")})`
+    );
   }
 
   const mefaId = product.general_mefa_id ? String(product.general_mefa_id).toLowerCase().trim() : "";
@@ -230,12 +240,32 @@ function validateProduct(product) {
     warnings.push("title_en (English title) is recommended");
   }
 
-  if (!product.attr_subject_ids || !parseIds(product.attr_subject_ids).length) {
-    warnings.push("attr_subject_ids (subject/theme) is recommended");
+  if (!product.product_type_ids || !parseIds(product.product_type_ids).length) {
+    warnings.push("product_type_ids is recommended (real form field)");
   }
 
-  if (!product.attr_technique_ids || !parseIds(product.attr_technique_ids).length) {
-    warnings.push("attr_technique_ids (technique) is recommended");
+  const hasAnyAttribute =
+    parseIds(product.attr_usage_type_ids).length ||
+    parseIds(product.attr_piece_count_select_ids).length ||
+    parseIds(product.attr_visual_feature_ids).length ||
+    parseIds(product.attr_frame_type_ids).length ||
+    parseIds(product.attr_frame_material_ids).length ||
+    parseIds(product.attr_surface_guard_ids).length ||
+    parseIds(product.attr_resistance_ids).length ||
+    parseIds(product.attr_washing_method_ids).length ||
+    parseIds(product.attr_general_design_ids).length ||
+    parseIds(product.attr_print_type_ids).length ||
+    (product.attr_design || "").trim() ||
+    (product.attr_frame_color || "").trim() ||
+    (product.attr_extra_description || "").trim() ||
+    (product.attr_frame_thickness_mm || "").trim() ||
+    parseIds(product.attr_subject_ids).length ||
+    parseIds(product.attr_technique_ids).length ||
+    (product.attr_description || "").trim() ||
+    (product.attr_piece_count || "").trim();
+
+  if (!hasAnyAttribute) {
+    warnings.push("No attributes provided. Category 6946 usually needs attribute values for approval");
   }
 
   return { errors, warnings };
@@ -257,6 +287,7 @@ function validateAllProducts(products) {
 }
 
 function displayValidationResults(products) {
+  const { totalErrors, totalWarnings } = validateAllProducts(products);
   let hasErrors = false;
   const summaryErrors = [];
   const summaryWarnings = [];
@@ -289,7 +320,6 @@ function displayValidationResults(products) {
   });
 
   console.log();
-  const { totalErrors, totalWarnings } = validateAllProducts(products);
 
   if (totalErrors > 0) {
     error(`${totalErrors} error(s) found. Fix before uploading.`);
@@ -311,7 +341,7 @@ async function reviewProduct(product, index, total) {
   console.log(`\n${colors.bright}[${index + 1}/${total}] ${title}${colors.reset}`);
 
   console.log(`  Model: ${product.model}`);
-  console.log(`  Type: ${product.painting_type}`);
+  console.log(`  Division: ${product.division_id || product.division_label || product.painting_type || "(not set)"}`);
   console.log(`  Origin: ${product.general_mefa_id}`);
   console.log(`  Brand ID: ${product.brand_id}`);
 
@@ -406,16 +436,13 @@ function showHelp() {
 
   console.log("\n" + colors.bright + "COMMANDS:" + colors.reset);
   console.log("  --help              Show this help message");
-  console.log("  --validate FILE     Validate CSV file (no upload)");
-  console.log("  --upload FILE       Interactive upload mode");
-  console.log("  --dry-run FILE      Test upload without sending to API");
-  console.log("  --auto FILE         Upload all products without review");
-  console.log("  --check-token       Check API token status");
+  console.log("  --validate FILE     Validate CSV file only");
+  console.log("  --upload FILE       Validate + review + uploader handoff");
+  console.log("  --dry-run FILE      Validate/review only (no uploader handoff)");
+  console.log("  --auto FILE         Validate without interactive review");
 
   console.log("\n" + colors.bright + "OPTIONS:" + colors.reset);
-  console.log("  --fix               Auto-fix common validation errors");
   console.log("  --no-review         Skip interactive review");
-  console.log("  --resume            Retry previously failed products");
 
   console.log("\n" + colors.bright + "EXAMPLES:" + colors.reset);
   console.log("  node cli.js --validate products.csv");
@@ -428,7 +455,7 @@ function showHelp() {
   console.log("  See CSV-SPEC.md for detailed column documentation");
 
   console.log("\n" + colors.bright + "CONFIGURATION:" + colors.reset);
-  console.log("  API Token: Set DIGIKALA_TOKEN environment variable");
+  console.log("  Uploader auth: Set DIGIKALA_COOKIE environment variable");
   console.log("  Or edit digikala-uploader.js CONFIG.cookie directly");
 }
 
@@ -450,7 +477,10 @@ async function main() {
 
   for (const arg of args) {
     if (arg.startsWith("--")) {
-      command = arg.slice(2);
+      const candidate = arg.slice(2);
+      if (SUPPORTED_COMMANDS.has(candidate)) {
+        command = candidate;
+      }
     } else if (!csvFile && !arg.startsWith("--")) {
       csvFile = arg;
     }
@@ -480,6 +510,15 @@ async function main() {
     if (command === "validate") {
       if (valid) {
         success("All products are valid! Ready for upload.");
+      }
+      return;
+    }
+
+    if (command === "dry-run") {
+      if (!valid) {
+        warning("Dry run completed with validation errors.");
+      } else {
+        success("Dry run completed. Data is valid for uploader handoff.");
       }
       return;
     }
