@@ -39,6 +39,16 @@ const DIVISIONS = {
 };
 
 const SUPPORTED_COMMANDS = new Set(["help", "validate", "upload", "dry-run"]);
+const SUPPORTED_FLAGS = new Set([
+  "--yes",
+  "-y",
+  "--no-review",
+  "--auto",
+  "--help",
+  "--validate",
+  "--upload",
+  "--dry-run",
+]);
 
 const MEFA_IDS = {
   domestic: 893,
@@ -441,21 +451,23 @@ function showHelp() {
   header("Digikala Product Uploader - Help");
 
   console.log(colors.bright + "USAGE:" + colors.reset);
-  console.log("  node cli.js [command] [options]");
+  console.log("  node cli.js [command] [options] [file]");
 
   console.log("\n" + colors.bright + "COMMANDS:" + colors.reset);
   console.log("  --help              Show this help message");
   console.log("  --validate FILE     Validate CSV file only");
   console.log("  --upload FILE       Validate + review + upload (single entry point)");
   console.log("  --dry-run FILE      Validate/review only (no API upload)");
-  console.log("  --auto              Skip interactive review");
 
   console.log("\n" + colors.bright + "OPTIONS:" + colors.reset);
-  console.log("  --no-review         Skip interactive review");
+  console.log("  --yes, -y           Skip interactive review (auto-approve all products)");
+  console.log("  --no-review         Alias for --yes (skip interactive review)");
 
   console.log("\n" + colors.bright + "EXAMPLES:" + colors.reset);
   console.log("  node cli.js --validate products.csv");
   console.log("  node cli.js --upload products.csv");
+  console.log("  node cli.js --upload products.csv --yes");
+  console.log("  node cli.js -y products.csv (shorthand)");
   console.log("  node cli.js --dry-run products.csv --no-review");
 
   console.log("\n" + colors.bright + "FILE FORMAT:" + colors.reset);
@@ -531,7 +543,9 @@ async function main() {
       return;
     }
 
-    if (!valid && !args.includes("--auto")) {
+    const skipReview = args.includes("--yes") || args.includes("-y") || args.includes("--no-review");
+
+    if (!valid && !skipReview) {
       warning("Please fix errors before uploading");
 
       const continueAnyway = await prompt("Continue anyway? (may fail during upload) [yes/no]:");
@@ -545,7 +559,7 @@ async function main() {
     let productsToUpload;
 
     // Interactive review
-    if (!args.includes("--no-review") && !args.includes("--auto")) {
+    if (!skipReview) {
       const reviewed = await reviewAllProducts(products);
 
       // Filter out skipped products
@@ -583,7 +597,7 @@ async function main() {
           return parsedProduct;
         });
     } else {
-      log("Skipping interactive review (--no-review or --auto)", "dim");
+      log("Skipping interactive review (auto-approve mode enabled)", "dim");
       productsToUpload = uploader.parseCSV(csvFile);
     }
 

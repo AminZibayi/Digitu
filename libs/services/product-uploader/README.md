@@ -59,8 +59,12 @@ A comprehensive Node.js CLI tool for automatically adding products to Digikala v
    # Validate your CSV first
    node cli.js --validate products.csv
 
-   # Start interactive upload
+   # Start interactive upload (review each product)
    node cli.js --upload products.csv
+
+   # Skip review and auto-approve all products (yes-to-all mode)
+   node cli.js --upload products.csv --yes
+   node cli.js --upload products.csv -y   # shorthand
    ```
 
 ---
@@ -179,13 +183,20 @@ node cli.js --upload products.csv
 # 5. Upload starts automatically from CLI
 ```
 
-### Batch Upload (Auto)
+### Batch Upload (Auto-Approve)
 
 ```bash
-# Upload all valid products without review
-node cli.js --upload products.csv --auto
+# Upload all valid products without interactive review
+node cli.js --upload products.csv --yes
+node cli.js --upload products.csv -y      # shorthand
+node cli.js --upload products.csv --no-review  # legacy
 
-# Skips interactive prompts
+# Behavior:
+# - Validates all products
+# - Skips product-by-product review
+# - Auto-approves all valid products
+# - Starts upload immediately
+# - Useful for batch processing or automation scripts
 ```
 
 ### Dry Run
