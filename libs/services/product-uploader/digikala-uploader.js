@@ -40,6 +40,66 @@ const CONFIG = {
 };
 
 // ────────────────────────────────────────────────────────────
+// PERSISTENT PRODUCTS DATABASE
+// ────────────────────────────────────────────────────────────
+const PRODUCTS_DB_FILE = "products-db.json";
+
+function loadProductsDB() {
+  try {
+    if (fs.existsSync(PRODUCTS_DB_FILE)) {
+      const content = fs.readFileSync(PRODUCTS_DB_FILE, "utf-8");
+      return JSON.parse(content);
+    }
+  } catch (err) {
+    console.warn(`⚠ Could not load products database: ${err.message}`);
+  }
+  return {
+    version: "1.0",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    products: [],
+  };
+}
+
+function saveProductsDB(db) {
+  try {
+    db.updatedAt = new Date().toISOString();
+    fs.writeFileSync(PRODUCTS_DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+  } catch (err) {
+    console.warn(`⚠ Could not save products database: ${err.message}`);
+  }
+}
+
+function addProductToDB(productId, title, model = null, sourceFile = null) {
+  const db = loadProductsDB();
+  const record = {
+    timestamp: new Date().toISOString(),
+    productId,
+    title,
+    model: model || null,
+    sourceFile: sourceFile || null,
+  };
+  db.products.push(record);
+  saveProductsDB(db);
+  return record;
+}
+
+function isProductInDB(productId) {
+  const db = loadProductsDB();
+  return db.products.some((p) => p.productId === productId);
+}
+
+function getProductFromDB(productId) {
+  const db = loadProductsDB();
+  return db.products.find((p) => p.productId === productId);
+}
+
+function getAllProductsFromDB() {
+  const db = loadProductsDB();
+  return db.products;
+}
+
+// ────────────────────────────────────────────────────────────
 // CATEGORY 6946 CONSTANTS (تابلو)
 // ────────────────────────────────────────────────────────────
 const CATEGORY_ID = 6946;
@@ -345,7 +405,7 @@ async function processProduct(p, index) {
     const productId = await finalizeProduct(draftId, encryptedIds);
     console.log(`✓  →  product_id=${productId}`);
 
-    return { status: "success", title: label, draftId, productId };
+    return { status: "success", title: label, model: p.model, draftId, productId };
   } catch (err) {
     console.log(`\n  ❌ FAILED: ${err.message}`);
     return { status: "failed", title: label, error: err.message };
@@ -498,7 +558,11 @@ async function runUpload(products, options = {}) {
 
   if (ok.length) {
     console.log("\nSuccessful uploads:");
-    ok.forEach((r) => console.log(`  ✓ "${r.title}" → product_id: ${r.productId}`));
+    ok.forEach((r) => {
+      console.log(`  ✓ "${r.title}" → product_id: ${r.productId}`);
+      // Save to persistent database
+      addProductToDB(r.productId, r.title, r.model, sourceLabel);
+    });
   }
   if (fail.length) {
     console.log("\nFailed products:");
@@ -514,6 +578,12 @@ module.exports = {
   parseCSV,
   runUpload,
   processProduct,
+  loadProductsDB,
+  saveProductsDB,
+  addProductToDB,
+  isProductInDB,
+  getProductFromDB,
+  getAllProductsFromDB,
 };
 
 if (require.main === module) {

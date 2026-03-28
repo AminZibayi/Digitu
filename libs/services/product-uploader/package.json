@@ -11,7 +11,8 @@
     "validate": "node cli.js --validate products.csv",
     "upload": "node cli.js --upload products.csv",
     "dry-run": "node cli.js --dry-run products.csv",
-    "help": "node cli.js --help"
+    "help": "node cli.js --help",
+    "list": "node products-db-viewer.js"
   },
   "keywords": [
     "digikala",

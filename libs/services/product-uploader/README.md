@@ -143,6 +143,9 @@ cli.js                      Interactive CLI tool
 ├── Product by product confirmation
 └── User-friendly prompts
 
+products-db-viewer.js       Products database viewer
+└── Query and view uploaded product records
+
 API-SPEC.md                 API documentation
 CSV-SPEC.md                 CSV column guide
 PERSIAN-GUIDE.md            Persian usage guide
@@ -150,9 +153,127 @@ README.md                   This file
 
 products.csv                Sample CSV (2 products)
 products_live_test.csv      Single-row live test CSV
+products-db.json            Persistent products database (auto-created)
+upload_results.json         Latest upload results
 scraped/apiExamples.js      Raw API call examples
 scraped/seller.digikala.com.har  Network traffic capture
 ```
+
+---
+
+## 📦 Products Database
+
+### Overview
+
+All successfully uploaded products are automatically saved to a **persistent database** (`products-db.json`). This provides a complete history of all products created through this tool, including their product IDs and titles.
+
+### View Your Products
+
+```bash
+# List all uploaded products
+node products-db-viewer.js
+
+# Get count of uploaded products
+node products-db-viewer.js --count
+
+# Search for a product by title or model
+node products-db-viewer.js --search "نقاشی"
+
+# Export as JSON
+node products-db-viewer.js --json > products-export.json
+```
+
+### Database Structure
+
+Each uploaded product record contains:
+
+```json
+{
+  "timestamp": "2026-03-28T10:30:45.123Z",
+  "productId": 12345678,
+  "title": "تابلو نقاشی طرح طبیعت",
+  "model": "model-001",
+  "sourceFile": "products.csv"
+}
+```
+
+- **timestamp**: When the product was uploaded
+- **productId**: Digikala's assigned product ID (used for editing/managing)
+- **title**: Product Persian title
+- **model**: Product model/SKU from CSV
+- **sourceFile**: Which CSV file was uploaded
+
+### Database Benefits
+
+✅ **Complete Audit Trail** — See every product ever uploaded  
+✅ **Prevents Duplication** — Track what's already in the system  
+✅ **Quick Reference** — Find product IDs for editing  
+✅ **Pagination Support** — Identify gaps for bulk operations  
+✅ **Persistent** — Survives script restarts (unlike upload_results.json)
+
+### Access the Database from Code
+
+```javascript
+const uploader = require("./digikala-uploader");
+
+// Get all products
+const allProducts = uploader.getAllProductsFromDB();
+
+// Check if a product exists
+const exists = uploader.isProductInDB(12345678);
+
+// Get info on a specific product
+const product = uploader.getProductFromDB(12345678);
+
+// Manually add a record (e.g., for imported products)
+uploader.addProductToDB(12345678, "تابلو نقاشی", "model-001", "manual");
+```
+
+### Using npm Scripts
+
+For convenience, you can use npm scripts instead of typing full commands:
+
+```bash
+# Validate your CSV
+npm run validate
+
+# Start interactive upload
+npm run upload
+
+# Dry run without API calls
+npm run dry-run
+
+# View all uploaded products
+npm run list
+
+# Show help
+npm run help
+```
+
+### Product Management After Upload
+
+Once products are uploaded, you can find their Digikala product IDs in the database:
+
+```bash
+# View all uploaded products and their Digikala IDs
+npm run list
+
+# Search for a specific product
+node products-db-viewer.js --search "model-name"
+
+# Get JSON export for external systems
+npm run list --json > products-export.json
+
+# Use product IDs for editing in Digikala UI
+# Digikala product ID → Edit URL: https://seller.digikala.com/products/{productId}
+```
+
+**Example Workflow:**
+
+1. Upload products: `npm run upload`
+2. View assigned IDs: `npm run list`
+3. Edit on Digikala: Open https://seller.digikala.com/products/123456789
+4. Export for records: `npm run list --json`
 
 ---
 
