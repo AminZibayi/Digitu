@@ -24,6 +24,48 @@ variantDefaults:
   fbs_lead_time: 48
   shipping_type: both
 
+variantDefaultsBySize:
+  10x15:
+    package_weight: 300
+    package_length: 15
+    package_height: 3
+    package_width: 10
+  15x20:
+    package_weight: 400
+    package_length: 20
+    package_height: 3
+    package_width: 15
+  20x30:
+    package_weight: 550
+    package_length: 30
+    package_height: 4
+    package_width: 20
+  30x40:
+    package_weight: 800
+    package_length: 40
+    package_height: 4
+    package_width: 30
+  40x60:
+    package_weight: 1200
+    package_length: 60
+    package_height: 5
+    package_width: 40
+  50x70:
+    package_weight: 1700
+    package_length: 70
+    package_height: 6
+    package_width: 50
+  60x90:
+    package_weight: 2400
+    package_length: 90
+    package_height: 6
+    package_width: 60
+  70x100:
+    package_weight: 3200
+    package_length: 100
+    package_height: 7
+    package_width: 70
+
 sizes:
   - key: 10x15
     themeValueId: 106087

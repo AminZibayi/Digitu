@@ -39,7 +39,7 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(
-    `Digikala Variant Creator CLI\n\nUsage:\n  pnpm variant:create --config ./config.yaml --input ./fixtures/products.sample.json [--dry-run] [--output-dir ./output]\n\nOptions:\n  --config      Path to YAML config (required)\n  --input       Path to product list JSON file (required)\n  --dry-run     Compute and print payloads without API POST\n  --output-dir  Output directory for result files (default: ./output)\n  --verbose     Print debug logs\n`
+    `Digikala Variant Creator CLI\n\nUsage:\n  pnpm start -- --config ./config.yaml --input ./fixtures/products.sample.json [--dry-run] [--output-dir ./output]\n\nOptions:\n  --config      Path to YAML config (required)\n  --input       Path to product list JSON file (required)\n  --dry-run     Compute and print payloads without API POST\n  --output-dir  Output directory for result files (default: ./output)\n  --verbose     Print debug logs\n`
   );
 }
 

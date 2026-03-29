@@ -8,10 +8,10 @@ The Digikala Variant Creator now has **comprehensive CLI and file logging** buil
 
 ```bash
 # Default logging (INFO level)
-npm run variant:create -- --config config.yaml --input products.json
+pnpm start -- --config config.yaml --input products.json
 
 # Detailed logging (DEBUG level)
-npm run variant:create -- --config config.yaml --input products.json --verbose
+pnpm start -- --config config.yaml --input products.json --verbose
 
 # View logs
 cat logs/variant-creator.log
@@ -50,10 +50,10 @@ Example:
 
 ```bash
 # Just INFO/WARN/ERROR (default)
-npm run variant:create -- --config config.yaml --input products.json
+pnpm start -- --config config.yaml --input products.json
 
 # Add DEBUG messages
-npm run variant:create -- --config config.yaml --input products.json --verbose
+pnpm start -- --config config.yaml --input products.json --verbose
 ```
 
 ## Use Cases
@@ -62,7 +62,7 @@ npm run variant:create -- --config config.yaml --input products.json --verbose
 
 ```bash
 # Terminal 1: Start the run
-npm run variant:create -- --config prod.yaml --input batch.json
+pnpm start -- --config prod.yaml --input batch.json
 
 # Terminal 2: Watch logs in real-time
 tail -f logs/variant-creator.log
@@ -188,3 +188,4 @@ variant-creator/
 - [LOGGING.md](LOGGING.md) - Comprehensive logging documentation
 - [LOGGING-IMPLEMENTATION.md](LOGGING-IMPLEMENTATION.md) - Implementation details
 - [README.md](README.md) - Project overview
+

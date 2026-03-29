@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node src/cli.js",
-    "variant:create": "node src/cli.js",
+    "update": "pnpm run --silent run -- --config ./config.live-test.yaml --input ./fixtures/products.live-test.json --output-dir ./output",
+    "dry-run": "pnpm run --silent run -- --config ./config.live-test.yaml --input ./fixtures/products.live-test.json --dry-run",
     "test": "vitest run --globals",
     "test:watch": "vitest --globals"
   },

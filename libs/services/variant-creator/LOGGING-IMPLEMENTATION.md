@@ -64,7 +64,7 @@ A lightweight, zero-dependency logging system for the Digikala Variant Creator t
 ✅ **Verbose Mode**
 
 ```bash
-npm run variant:create -- --config config.yaml --input products.json --verbose
+pnpm start -- --config config.yaml --input products.json --verbose
 ```
 
 ✅ **Automatic File Management**
@@ -83,7 +83,7 @@ npm run variant:create -- --config config.yaml --input products.json --verbose
 ### Basic Run (INFO level)
 
 ```bash
-npm run variant:create -- --config config.yaml --input products.json
+pnpm start -- --config config.yaml --input products.json
 ```
 
 **Output**: Console shows INFO/WARN/ERROR + file logs same
@@ -91,7 +91,7 @@ npm run variant:create -- --config config.yaml --input products.json
 ### Debug Run (DEBUG level)
 
 ```bash
-npm run variant:create -- --config config.yaml --input products.json --verbose
+pnpm start -- --config config.yaml --input products.json --verbose
 ```
 
 **Output**: Console shows all levels + file logs same
@@ -100,7 +100,7 @@ npm run variant:create -- --config config.yaml --input products.json --verbose
 
 ```bash
 # In one terminal:
-npm run variant:create -- --config config.yaml --input products.json
+pnpm start -- --config config.yaml --input products.json
 
 # In another terminal:
 tail -f logs/variant-creator.log
@@ -256,3 +256,4 @@ Possible additions (not implemented):
 ✅ Comprehensive documentation created
 ✅ End-to-end tested with real API calls (from previous session)
 ✅ Log format is production-ready
+

@@ -19,6 +19,20 @@ const baseConfig = {
     fbs_lead_time: 48,
     shipping_type: "both",
   },
+  variantDefaultsBySize: {
+    "100x70": {
+      package_weight: 1200,
+      package_length: 110,
+      package_height: 12,
+      package_width: 80,
+    },
+    "130x200": {
+      package_weight: 2500,
+      package_length: 205,
+      package_height: 14,
+      package_width: 135,
+    },
+  },
   sizes: [
     { key: "100x70", themeValueId: 108432, active: true },
     { key: "130x200", themeValueId: 105738, active: true },
@@ -58,6 +72,21 @@ const baseConfig = {
 };
 
 describe("pricing engine", () => {
+  it("applies variantDefaultsBySize overrides by size", () => {
+    const drafts = buildVariantDrafts(baseConfig, {
+      productId: 1,
+      productTitle: "تابلو ساده",
+    });
+
+    const for100x70 = drafts.find((d) => d.sizeKey === "100x70");
+    const for130x200 = drafts.find((d) => d.sizeKey === "130x200");
+
+    expect(for100x70.payload.package_weight).toBe(1200);
+    expect(for100x70.payload.package_length).toBe(110);
+    expect(for130x200.payload.package_weight).toBe(2500);
+    expect(for130x200.payload.package_width).toBe(135);
+  });
+
   it("applies Persian keyword rule and converts USD", () => {
     const drafts = buildVariantDrafts(baseConfig, {
       productId: 1,

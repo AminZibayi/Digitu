@@ -24,6 +24,18 @@ variantDefaults:
   fbs_lead_time: 48
   shipping_type: both
 
+variantDefaultsBySize:
+  100x70:
+    package_weight: 1200
+    package_length: 110
+    package_height: 12
+    package_width: 80
+  130x200:
+    package_weight: 2500
+    package_length: 205
+    package_height: 14
+    package_width: 135
+
 sizes:
   - key: 100x70
     themeValueId: 108432

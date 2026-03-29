@@ -19,7 +19,7 @@ The Digikala Variant Creator includes a comprehensive logging system that captur
 ### Running with Default Logging (INFO level)
 
 ```bash
-npm run variant:create -- --config ./config.yaml --input ./products.json
+pnpm start -- --config ./config.yaml --input ./products.json
 ```
 
 **Output:**
@@ -30,7 +30,7 @@ npm run variant:create -- --config ./config.yaml --input ./products.json
 ### Running with Verbose Logging (DEBUG level)
 
 ```bash
-npm run variant:create -- --config ./config.yaml --input ./products.json --verbose
+pnpm start -- --config ./config.yaml --input ./products.json --verbose
 ```
 
 **Output:**
@@ -220,7 +220,7 @@ The logging system consists of:
 
 ```bash
 # Run with verbose logging
-npm run variant:create -- --config prod.yaml --input batch.json --verbose
+pnpm start -- --config prod.yaml --input batch.json --verbose
 
 # While running, tail logs in another terminal
 tail -f logs/variant-creator.log
@@ -239,3 +239,4 @@ Possible future logging improvements:
 - JSON-only output format
 - Syslog integration
 - Remote logging endpoints
+

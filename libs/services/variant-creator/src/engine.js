@@ -97,13 +97,31 @@ function applyRules({ basePayload, basePrice, config, matchedRules }) {
   };
 }
 
+function getVariantDefaultsForSize(config, sizeKey) {
+  const normalized = normalizeSizeKey(sizeKey);
+  const bySize = config.variantDefaultsBySize || {};
+
+  let sizeOverrides = {};
+  for (const [key, value] of Object.entries(bySize)) {
+    if (normalizeSizeKey(key) === normalized) {
+      sizeOverrides = value || {};
+      break;
+    }
+  }
+
+  return {
+    ...config.variantDefaults,
+    ...sizeOverrides,
+  };
+}
+
 function buildVariantDrafts(config, product) {
   const normalizedTitle = normalizeTitle(product.productTitle);
   const activeSizes = config.sizes.filter((size) => size.active !== false);
 
   return activeSizes.map((size) => {
     const basePayload = {
-      ...config.variantDefaults,
+      ...getVariantDefaultsForSize(config, size.key),
       id: null,
       site: config.api.site || "digikala",
       theme_values: [

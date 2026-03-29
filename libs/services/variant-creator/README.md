@@ -1,5 +1,7 @@
 # Digikala Variant Creator (Subproject)
 
+راهنمای فارسی: [README.fa.md](README.fa.md)
+
 Production-oriented, YAML-driven single application for variant creation on existing Digikala products.
 
 ## Scope
@@ -42,6 +44,7 @@ Use `config.example.yaml` as the base.
 - `pricing.basePriceBySize`: base price per size.
 - `pricing.rules`: conditional price/field overrides by size and title keyword match.
 - `variantDefaults`: constant fields applied to every variant.
+- `variantDefaultsBySize` (optional): per-size overrides for variant defaults such as package dimensions and weight.
 - `idempotency`: duplicate-prevention settings.
 
 ### Rule Conflict Resolution
@@ -73,22 +76,28 @@ With `usdToBaseRate`, this converts 100 USD to base currency amount.
 
 ## Run Commands
 
-Dry-run (no POST):
+Generic run with custom files:
 
 ```bash
-pnpm variant:create -- --config ./config.example.yaml --input ./fixtures/products.sample.json --dry-run
+pnpm start -- --config ./config.example.yaml --input ./fixtures/products.sample.json --output-dir ./output
 ```
 
-Real run:
+Live-test fixture dry-run (no POST):
 
 ```bash
-pnpm variant:create -- --config ./config.example.yaml --input ./fixtures/products.sample.json --output-dir ./output
+pnpm dry-run
 ```
 
-Verbose logs:
+Live-test fixture real update:
 
 ```bash
-pnpm variant:create -- --config ./config.example.yaml --input ./fixtures/products.sample.json --dry-run --verbose
+pnpm update
+```
+
+Verbose logs with custom files:
+
+```bash
+pnpm start -- --config ./config.example.yaml --input ./fixtures/products.sample.json --dry-run --verbose
 ```
 
 ## Logging

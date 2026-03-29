@@ -72,6 +72,13 @@ function validateCrossFields(config) {
     }
   }
 
+  const variantDefaultsBySizeKeys = Object.keys(config.variantDefaultsBySize || {}).map(normalizeSizeKey);
+  for (const key of variantDefaultsBySizeKeys) {
+    if (!normalizedSizeKeys.has(key)) {
+      problems.push(`variantDefaultsBySize has key '${key}' that does not exist in sizes`);
+    }
+  }
+
   const hasUsdRule = (config.pricing.rules || []).some((rule) =>
     Object.prototype.hasOwnProperty.call(rule.then || {}, "setUsdPrice")
   );
