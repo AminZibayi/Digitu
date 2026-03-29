@@ -368,7 +368,7 @@ async function finalizeProduct(draftId, encryptedIds) {
 // ────────────────────────────────────────────────────────────
 // PROCESS ONE PRODUCT ROW
 // ────────────────────────────────────────────────────────────
-async function processProduct(p, index) {
+async function processProduct(p, index, sourceLabel = "(in-memory)") {
   const label = p.title_fa || p.model || `Row ${index + 1}`;
   console.log(`\n▶ [${index + 1}] ${label}`);
 
@@ -405,6 +405,10 @@ async function processProduct(p, index) {
     process.stdout.write("  [5/5] Finalize    ... ");
     const productId = await finalizeProduct(draftId, encryptedIds);
     console.log(`✓  →  product_id=${productId}`);
+
+    // Persist immediately from live API success (not from upload_results.json post-processing).
+    const dbTitle = p.title_fa || label;
+    addProductToDB(productId, dbTitle, p.model, sourceLabel);
 
     return { status: "success", title: label, model: p.model, draftId, productId };
   } catch (err) {
@@ -564,7 +568,7 @@ async function runUpload(products, options = {}) {
 
   const results = [];
   for (let i = 0; i < products.length; i++) {
-    const result = await processProduct(products[i], i);
+    const result = await processProduct(products[i], i, sourceLabel);
     results.push(result);
     if (i < products.length - 1) await sleep(CONFIG.delayBetweenProducts);
   }
@@ -581,8 +585,6 @@ async function runUpload(products, options = {}) {
     console.log("\nSuccessful uploads:");
     ok.forEach((r) => {
       console.log(`  ✓ "${r.title}" → product_id: ${r.productId}`);
-      // Save to persistent database
-      addProductToDB(r.productId, r.title, r.model, sourceLabel);
     });
   }
   if (fail.length) {

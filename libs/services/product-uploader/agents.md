@@ -2,6 +2,8 @@
 
 This file defines working rules for coding agents in this repository.
 
+use pnpm
+
 ## Project Context
 
 - Goal: automate Digikala Seller product creation from CSV input.

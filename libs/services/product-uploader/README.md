@@ -181,6 +181,9 @@ node products-db-viewer.js --search "نقاشی"
 
 # Export as JSON
 node products-db-viewer.js --json > products-export.json
+
+# Export compact records from persistent DB
+pnpm run export:products
 ```
 
 ### Database Structure
@@ -235,19 +238,22 @@ For convenience, you can use npm scripts instead of typing full commands:
 
 ```bash
 # Validate your CSV
-npm run validate
+pnpm run validate
 
 # Start interactive upload
-npm run upload
+pnpm run upload
 
 # Dry run without API calls
-npm run dry-run
+pnpm run dry-run
 
 # View all uploaded products
-npm run list
+pnpm run list
+
+# Export compact records for external systems
+pnpm run export:products
 
 # Show help
-npm run help
+pnpm run help
 ```
 
 ### Product Management After Upload
@@ -256,13 +262,13 @@ Once products are uploaded, you can find their Digikala product IDs in the datab
 
 ```bash
 # View all uploaded products and their Digikala IDs
-npm run list
+pnpm run list
 
 # Search for a specific product
 node products-db-viewer.js --search "model-name"
 
-# Get JSON export for external systems
-npm run list --json > products-export.json
+# Get compact JSON export from DB
+pnpm run export:products
 
 # Use product IDs for editing in Digikala UI
 # Digikala product ID → Edit URL: https://seller.digikala.com/products/{productId}
@@ -270,10 +276,10 @@ npm run list --json > products-export.json
 
 **Example Workflow:**
 
-1. Upload products: `npm run upload`
-2. View assigned IDs: `npm run list`
+1. Upload products: `pnpm run upload`
+2. View assigned IDs: `pnpm run list`
 3. Edit on Digikala: Open https://seller.digikala.com/products/123456789
-4. Export for records: `npm run list --json`
+4. Export for records: `pnpm run export:products`
 
 ---
 

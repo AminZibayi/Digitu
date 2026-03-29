@@ -12,7 +12,8 @@
     "upload": "node cli.js --upload products.csv",
     "dry-run": "node cli.js --dry-run products.csv",
     "help": "node cli.js --help",
-    "list": "node products-db-viewer.js"
+    "list": "node products-db-viewer.js",
+    "export:products": "node export-products.js"
   },
   "keywords": [
     "digikala",
