@@ -134,7 +134,7 @@ Retrieves validation rules, required fields, and brand/attribute options for the
 
 Used as step 1 in the successful flow. This endpoint validates base fields and returns `draft_product_id` for next steps.
 
-**Request Body (observed successful shape):**
+**Request Body (complete observed shape):**
 
 ```json
 {
@@ -146,6 +146,7 @@ Used as step 1 in the successful flow. This endpoint validates base fields and r
   "is_iranian": true,
   "product_classes": ["2"],
   "general_mefa_id": 893,
+  "description": "توضیح کامل محصول با طول مناسب",
   "exclusive_mefa_id": null,
   "fake": false,
   "fake_reasons": [],
@@ -163,11 +164,38 @@ Used as step 1 in the successful flow. This endpoint validates base fields and r
 }
 ```
 
+**Field Definitions:**
+
+| Field                         | Type        | Required | Notes                                                     |
+| ----------------------------- | ----------- | -------- | --------------------------------------------------------- |
+| `category_id`                 | Integer     | Yes      | Always 6946 for تابلو category                            |
+| `division_id`                 | Integer     | Yes      | E.g., 4928 (تابلو), 9657 (تابلو نوری), 9655 (تابلو پازل)  |
+| `brand_id`                    | Integer     | Yes      | Valid Digikala brand ID                                   |
+| `model`                       | String      | Yes      | Unique product model/SKU per brand                        |
+| `product_type_ids`            | Array       | Yes      | Product type IDs, e.g., [24054] (تابلو ساده)              |
+| `is_iranian`                  | Boolean     | Yes      | Domestic (true) or imported (false)                       |
+| `product_classes`             | Array       | Optional | Product classification IDs, e.g., ["2"]                   |
+| `general_mefa_id`             | Integer     | Yes      | 893 (domestic) or 894 (imported)                          |
+| `description`                 | String      | Yes      | Main product description, required length: 150-2000 chars |
+| `exclusive_mefa_id`           | String/Null | Optional | For exclusive MEFA classification (usually null)          |
+| `fake`                        | Boolean     | Yes      | false (counterfeit detection toggle)                      |
+| `fake_reasons`                | Array       | Optional | Reasons for fake flag (empty array if fake=false)         |
+| `advantages`                  | Array       | Optional | List of product advantages/benefits                       |
+| `disadvantages`               | Array       | Optional | List of product limitations/drawbacks                     |
+| `package_width`               | Number      | Optional | Package width (cm) or null                                |
+| `package_height`              | Number      | Optional | Package height (cm) or null                               |
+| `package_length`              | Number      | Optional | Package length/depth (cm) or null                         |
+| `package_weight`              | Number      | Optional | Package weight (kg) or null                               |
+| `only_cf_fields.status`       | String      | Optional | Product status, e.g., "marketable"                        |
+| `only_cf_fields.platforms`    | Array       | Optional | Target platforms, e.g., ["digikala"]                      |
+| `only_cf_fields.other_titles` | Array       | Optional | Alternate titles (empty array typical)                    |
+
 **Response fields used:**
 
-- `draft_product_id`
-- `is_valid`
-- `errors`
+- `draft_product_id` (integer) — Use in subsequent steps
+- `is_valid` (boolean) — true if all required fields passed
+- `errors` (object/array) — Validation error details if is_valid=false
+- Other fields: bind data, score information (not used in uploader)
 
 ---
 

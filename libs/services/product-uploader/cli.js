@@ -62,18 +62,27 @@ const CSV_COLUMNS = [
   "model",
   "division_id",
   "division_label",
-  "painting_type",
   "product_type_ids",
-  "product_type_label",
   "is_iranian",
   "product_classes",
   "general_mefa_id",
+  "description",
   "title_fa",
   "title_en",
-  "attr_subject_ids",
-  "attr_technique_ids",
-  "attr_description",
-  "attr_piece_count",
+  "attr_usage_type_ids",
+  "attr_piece_count_select_ids",
+  "attr_visual_feature_ids",
+  "attr_design",
+  "attr_frame_type_ids",
+  "attr_frame_material_ids",
+  "attr_frame_color",
+  "attr_surface_guard_ids",
+  "attr_extra_description",
+  "attr_resistance_ids",
+  "attr_washing_method_ids",
+  "attr_general_design_ids",
+  "attr_frame_thickness_mm",
+  "attr_print_type_ids",
   "advantages",
   "disadvantages",
   "width",
@@ -85,9 +94,16 @@ const CSV_COLUMNS = [
   "package_length",
   "package_weight",
   "image_paths",
+  // Legacy aliases (backwards compat)
+  "painting_type",
+  "product_type_label",
+  "attr_subject_ids",
+  "attr_technique_ids",
+  "attr_description",
+  "attr_piece_count",
 ];
 
-const REQUIRED_FIELDS = ["brand_id", "model", "general_mefa_id", "title_fa", "image_paths"];
+const REQUIRED_FIELDS = ["brand_id", "model", "general_mefa_id", "description", "title_fa", "image_paths"];
 
 // ─────────────────────────────────────────────────────────────────────────
 // UTILITIES
@@ -232,6 +248,13 @@ function validateProduct(product) {
     errors.push("title_fa (Persian title) is required");
   } else if (product.title_fa.length < 5) {
     warnings.push("title_fa seems too short (recommend 50+ chars)");
+  }
+
+  const description = (product.description || "").trim();
+  if (!description) {
+    errors.push("description is required (150-2000 chars)");
+  } else if (description.length < 150 || description.length > 2000) {
+    errors.push(`description length must be between 150 and 2000 chars (current: ${description.length})`);
   }
 
   // Image paths

@@ -237,6 +237,7 @@ async function saveBasicInfo(p) {
     general_mefa_id: p.general_mefa_id,
     exclusive_mefa_id: null,
     fake: false,
+    description: p.description,
     package_width: p.package_width || 0,
     package_height: p.package_height || 0,
     package_length: p.package_length || 0,
@@ -418,14 +419,33 @@ function hasValidCookie() {
 
 // ────────────────────────────────────────────────────────────
 // CSV PARSER
-// Expected columns (see products.csv template):
-//   brand_id, model, painting_type, is_iranian, product_classes,
-//   general_mefa_id, title_fa, title_en,
-//   attr_subject_ids, attr_technique_ids, attr_description, attr_piece_count,
+// Expected columns (see products.csv template and CSV-SPEC.md):
+//
+// REQUIRED:
+//   brand_id, model, general_mefa_id, title_fa, image_paths
+//
+// DIVISION (provide one):
+//   division_id  OR  division_label / painting_type (legacy)
+//
+// CANONICAL ATTRIBUTES (category 6946):
+//   attr_usage_type_ids, attr_piece_count_select_ids, attr_visual_feature_ids,
+//   attr_design, attr_frame_type_ids, attr_frame_material_ids, attr_frame_color,
+//   attr_surface_guard_ids, attr_extra_description, attr_resistance_ids,
+//   attr_washing_method_ids, attr_general_design_ids, attr_frame_thickness_mm,
+//   attr_print_type_ids
+//
+// LEGACY ALIASES (backwards compatible, auto-mapped):
+//   painting_type → division_label
+//   attr_subject_ids → attr_usage_type_ids
+//   attr_technique_ids → attr_piece_count_select_ids
+//   attr_description → attr_extra_description
+//   attr_piece_count → attr_frame_thickness_mm
+//
+// OPTIONAL:
+//   title_en, is_iranian, product_classes, product_type_ids,
 //   advantages, disadvantages,
 //   width, height, length, weight,
-//   package_width, package_height, package_length, package_weight,
-//   image_paths
+//   package_width, package_height, package_length, package_weight
 // ────────────────────────────────────────────────────────────
 function parseCSV(filePath) {
   const raw = fs.readFileSync(filePath, { encoding: "utf-8" });
@@ -455,28 +475,29 @@ function parseCSV(filePath) {
       is_iranian: parseBoolean(r.is_iranian, true),
       product_classes: parseStrings(r.product_classes),
       general_mefa_id,
+      description: r.description || "",
 
       // Titles
       title_fa: r.title_fa,
       title_en: r.title_en || "",
 
-      // Canonical attributes
-      attr_usage_type_ids: parseIds(r.attr_usage_type_ids),
-      attr_piece_count_select_ids: parseIds(r.attr_piece_count_select_ids),
+      // Canonical attributes (category 6946)
+      attr_usage_type_ids: parseIds(r.attr_usage_type_ids || r.attr_subject_ids),
+      attr_piece_count_select_ids: parseIds(r.attr_piece_count_select_ids || r.attr_technique_ids),
       attr_visual_feature_ids: parseIds(r.attr_visual_feature_ids),
       attr_design: r.attr_design || "",
       attr_frame_type_ids: parseIds(r.attr_frame_type_ids),
       attr_frame_material_ids: parseIds(r.attr_frame_material_ids),
       attr_frame_color: r.attr_frame_color || "",
       attr_surface_guard_ids: parseIds(r.attr_surface_guard_ids),
-      attr_extra_description: r.attr_extra_description || "",
+      attr_extra_description: r.attr_extra_description || r.attr_description || "",
       attr_resistance_ids: parseIds(r.attr_resistance_ids),
       attr_washing_method_ids: parseIds(r.attr_washing_method_ids),
       attr_general_design_ids: parseIds(r.attr_general_design_ids),
-      attr_frame_thickness_mm: r.attr_frame_thickness_mm || "",
+      attr_frame_thickness_mm: r.attr_frame_thickness_mm || r.attr_piece_count || "",
       attr_print_type_ids: parseIds(r.attr_print_type_ids),
 
-      // Legacy attributes
+      // Legacy attributes (for reference; mapped above to canonical fields)
       attr_subject_ids: parseIds(r.attr_subject_ids),
       attr_technique_ids: parseIds(r.attr_technique_ids),
       attr_description: r.attr_description || "",
@@ -486,13 +507,13 @@ function parseCSV(filePath) {
       advantages: parseStrings(r.advantages),
       disadvantages: parseStrings(r.disadvantages),
 
-      // Product dimensions (mm / grams)
+      // Product dimensions (cm / kg)
       width: parseFloat(r.width) || 0,
       height: parseFloat(r.height) || 0,
       length: parseFloat(r.length) || 0,
       weight: parseFloat(r.weight) || 0,
 
-      // Package dimensions (mm / grams) — can be null
+      // Package dimensions (cm / kg) — can be null
       package_width: r.package_width ? parseFloat(r.package_width) : null,
       package_height: r.package_height ? parseFloat(r.package_height) : null,
       package_length: r.package_length ? parseFloat(r.package_length) : null,

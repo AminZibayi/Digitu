@@ -9,31 +9,56 @@
 
 ## Column Definitions & Validation
 
-| #   | Column Name          | Type           | Required | Format                                        | Description                                         |
-| --- | -------------------- | -------------- | -------- | --------------------------------------------- | --------------------------------------------------- |
-| 1   | `brand_id`           | Integer        | ✅       | Numeric                                       | Digikala brand ID (e.g., 719 for untitled brands)   |
-| 2   | `model`              | String         | ✅       | Text                                          | Product model identifier - unique per brand         |
-| 3   | `painting_type`      | String         | ✅       | تابلو / تابلو نوری / تابلو پازل               | Type of artwork/picture                             |
-| 4   | `is_iranian`         | Boolean        | ⚠️       | true / false                                  | Domestic (true) or imported (false). Default: true  |
-| 5   | `product_classes`    | String         | ⚠️       | Pipe-separated (e.g., `2`)                    | Product class IDs separated by `\|`                 |
-| 6   | `general_mefa_id`    | String         | ✅       | domestic / imported / 893 / 894               | Origin indicator: domestic=893, imported=894        |
-| 7   | `title_fa`           | String         | ✅       | Farsi/Persian text                            | Product title in Persian (50-200 characters)        |
-| 8   | `title_en`           | String         | ⚠️       | English text                                  | Product title in English (optional but recommended) |
-| 9   | `attr_subject_ids`   | String         | ⚠️       | Pipe-separated IDs (e.g., `21209\|21210`)     | Category 6946: Subject/Theme attribute IDs          |
-| 10  | `attr_technique_ids` | String         | ⚠️       | Pipe-separated IDs (e.g., `15907`)            | Category 6946: Technique attribute IDs              |
-| 11  | `attr_description`   | String         | ⚠️       | Free text                                     | Detailed product description                        |
-| 12  | `attr_piece_count`   | String/Integer | ⚠️       | Numeric                                       | Number of pieces (for multi-part artworks)          |
-| 13  | `advantages`         | String         | ⚠️       | Pipe-separated (e.g., `رنگ\|کیفیت\|ماندگاری`) | Comma-separated list of product advantages          |
-| 14  | `disadvantages`      | String         | ⚠️       | Pipe-separated (e.g., `حساس به رطوبت`)        | Comma-separated list of product drawbacks           |
-| 15  | `width`              | Decimal        | ⚠️       | Numeric (cm)                                  | Product width in centimeters                        |
-| 16  | `height`             | Decimal        | ⚠️       | Numeric (cm)                                  | Product height in centimeters                       |
-| 17  | `length`             | Decimal        | ⚠️       | Numeric (cm)                                  | Product depth/length in centimeters                 |
-| 18  | `weight`             | Decimal        | ⚠️       | Numeric (kg)                                  | Product weight in kilograms                         |
-| 19  | `package_width`      | Decimal        | ⚠️       | Numeric (cm)                                  | Package width in centimeters                        |
-| 20  | `package_height`     | Decimal        | ⚠️       | Numeric (cm)                                  | Package height in centimeters                       |
-| 21  | `package_length`     | Decimal        | ⚠️       | Numeric (cm)                                  | Package depth in centimeters                        |
-| 22  | `package_weight`     | Decimal        | ⚠️       | Numeric (kg)                                  | Package weight in kilograms                         |
-| 23  | `image_paths`        | String         | ✅       | Pipe-separated file paths                     | Local paths to images, order determines display     |
+| #   | Column Name                   | Type    | Required | Format                                        | Description                                             |
+| --- | ----------------------------- | ------- | -------- | --------------------------------------------- | ------------------------------------------------------- |
+| 1   | `brand_id`                    | Integer | ✅       | Numeric                                       | Digikala brand ID (e.g., 719 for untitled brands)       |
+| 2   | `model`                       | String  | ✅       | Text                                          | Product model identifier - unique per brand             |
+| 3   | `division_id`                 | Integer | ⚠️       | Numeric (or use division_label)               | Division ID (e.g., 4928 for تابلو, 9657 for تابلو نوری) |
+| 4   | `division_label`              | String  | ⚠️       | تابلو / تابلو نوری / تابلو پازل               | Division label (alternative to division_id)             |
+| 5   | `product_type_ids`            | String  | ⚠️       | Pipe-separated IDs (e.g., `24054`)            | Product type IDs (from API schema)                      |
+| 6   | `is_iranian`                  | Boolean | ⚠️       | true / false                                  | Domestic (true) or imported (false). Default: true      |
+| 7   | `product_classes`             | String  | ⚠️       | Pipe-separated (e.g., `2`)                    | Product class IDs separated by `\|`                     |
+| 8   | `general_mefa_id`             | String  | ✅       | domestic / imported / 893 / 894               | Origin indicator: domestic=893, imported=894            |
+| 9   | `description`                 | String  | ✅       | Free text (150-2000 chars)                    | Main product description sent in step 1 payload         |
+| 10  | `title_fa`                    | String  | ✅       | Farsi/Persian text                            | Product title in Persian (50-200 characters)            |
+| 10  | `title_en`                    | String  | ⚠️       | English text                                  | Product title in English (optional but recommended)     |
+| 11  | `attr_usage_type_ids`         | String  | ⚠️       | Pipe-separated IDs (e.g., `21209\|21210`)     | Category 6946: Usage type (نوع کاربرد)                  |
+| 12  | `attr_piece_count_select_ids` | String  | ⚠️       | Pipe-separated IDs (e.g., `15907`)            | Category 6946: Piece count/technique (تعداد تکه)        |
+| 13  | `attr_visual_feature_ids`     | String  | ⚠️       | Pipe-separated IDs (e.g., `14500`)            | Category 6946: Visual feature/frame (ویژگی ظاهری)       |
+| 14  | `attr_design`                 | String  | ⚠️       | Free text                                     | Category 6946: Design/pattern (طرح)                     |
+| 15  | `attr_frame_type_ids`         | String  | ⚠️       | Pipe-separated IDs (e.g., `52502`)            | Category 6946: Frame type (نوع تابلو)                   |
+| 16  | `attr_frame_material_ids`     | String  | ⚠️       | Pipe-separated IDs (e.g., `51393`)            | Category 6946: Frame material (جنس قاب)                 |
+| 17  | `attr_frame_color`            | String  | ⚠️       | Free text                                     | Category 6946: Frame color (رنگ فریم)                   |
+| 18  | `attr_surface_guard_ids`      | String  | ⚠️       | Pipe-separated IDs (e.g., `52453`)            | Category 6946: Surface protection (محافظ سطح)           |
+| 19  | `attr_extra_description`      | String  | ⚠️       | Free text                                     | Category 6946: Additional description (سایر توضیحات)    |
+| 20  | `attr_resistance_ids`         | String  | ⚠️       | Pipe-separated IDs (e.g., `19139`)            | Category 6946: Resistance (مقاوم در برابر)              |
+| 21  | `attr_washing_method_ids`     | String  | ⚠️       | Pipe-separated IDs (e.g., `19150`)            | Category 6946: Washing method (نحوه شست‌وشو)            |
+| 22  | `attr_general_design_ids`     | String  | ⚠️       | Pipe-separated IDs (e.g., `35285`)            | Category 6946: General design theme (طرح کلی)           |
+| 23  | `attr_frame_thickness_mm`     | String  | ⚠️       | Numeric (mm)                                  | Category 6946: Frame thickness (ضخامت فریم)             |
+| 24  | `attr_print_type_ids`         | String  | ⚠️       | Pipe-separated IDs (e.g., `52450`)            | Category 6946: Print type (نوع چاپ)                     |
+| 25  | `advantages`                  | String  | ⚠️       | Pipe-separated (e.g., `رنگ\|کیفیت\|ماندگاری`) | Product advantages                                      |
+| 26  | `disadvantages`               | String  | ⚠️       | Pipe-separated (e.g., `حساس به رطوبت`)        | Product drawbacks/limitations                           |
+| 27  | `width`                       | Decimal | ⚠️       | Numeric (cm)                                  | Product width in centimeters                            |
+| 28  | `height`                      | Decimal | ⚠️       | Numeric (cm)                                  | Product height in centimeters                           |
+| 29  | `length`                      | Decimal | ⚠️       | Numeric (cm)                                  | Product depth/length in centimeters                     |
+| 30  | `weight`                      | Decimal | ⚠️       | Numeric (kg)                                  | Product weight in kilograms                             |
+| 31  | `package_width`               | Decimal | ⚠️       | Numeric (cm)                                  | Package width in centimeters                            |
+| 32  | `package_height`              | Decimal | ⚠️       | Numeric (cm)                                  | Package height in centimeters                           |
+| 33  | `package_length`              | Decimal | ⚠️       | Numeric (cm)                                  | Package depth in centimeters                            |
+| 34  | `package_weight`              | Decimal | ⚠️       | Numeric (kg)                                  | Package weight in kilograms                             |
+| 35  | `image_paths`                 | String  | ✅       | Pipe-separated file paths                     | Local paths to images, order determines display         |
+
+### Legacy Alias Columns (Deprecated)
+
+These columns are still supported for backwards compatibility but are mapped to canonical fields:
+
+| Legacy Column        | Maps To                       | Notes                                 |
+| -------------------- | ----------------------------- | ------------------------------------- |
+| `painting_type`      | `division_label`              | Use `division_label` or `division_id` |
+| `attr_subject_ids`   | `attr_usage_type_ids`         | Older attribute naming                |
+| `attr_technique_ids` | `attr_piece_count_select_ids` | Older attribute naming                |
+| `attr_description`   | `attr_extra_description`      | Maps to extra/other description field |
+| `attr_piece_count`   | `attr_frame_thickness_mm`     | Legacy fallback mapping               |
 
 ---
 
@@ -44,8 +69,9 @@
 ```
 ✅ brand_id       - Non-empty, valid integer
 ✅ model          - Non-empty, non-whitespace string (max 100 chars)
-✅ painting_type  - One of: تابلو / تابلو نوری / تابلو پازل
+✅ division       - One of: division_id OR division_label OR painting_type (legacy)
 ✅ general_mefa_id - One of: domestic / imported / 893 / 894
+✅ description    - Non-empty, length 150 to 2000 characters
 ✅ title_fa       - Non-empty, Farsi text (50-200 chars recommended)
 ✅ image_paths    - At least 2 valid JPG/JPEG file paths
 ```
@@ -183,24 +209,28 @@
 
 ## CSV Examples
 
-### Minimal Valid Row
+### Minimal Valid Row (Legacy format - still supported)
+
+```csv
+brand_id,model,division_label,product_type_ids,is_iranian,product_classes,general_mefa_id,description,title_fa,title_en,advantages,disadvantages,image_paths
+719,مدل-001,تابلو,24054,true,,domestic,"این تابلو با کیفیت چاپ بالا، ترکیب رنگ هماهنگ و طراحی مناسب دکوراسیون داخلی تولید شده است و برای استفاده در اتاق پذیرایی، اتاق خواب و محیط کار گزینه ای زیبا و ماندگار محسوب می شود.",تابلو نقاشی طرح طبیعت مدل 001,Nature Painting Model 001,,,images/tabloo_001_main.jpg|images/tabloo_001_side.jpg
+```
+
+### Complete Row with Canonical Attribute Names
+
+```csv
+brand_id,model,division_id,product_type_ids,is_iranian,product_classes,general_mefa_id,description,title_fa,title_en,attr_usage_type_ids,attr_piece_count_select_ids,attr_visual_feature_ids,attr_design,attr_frame_type_ids,attr_frame_material_ids,attr_frame_color,attr_surface_guard_ids,attr_extra_description,attr_resistance_ids,attr_washing_method_ids,attr_general_design_ids,attr_frame_thickness_mm,attr_print_type_ids,advantages,disadvantages,width,height,length,weight,package_width,package_height,package_length,package_weight,image_paths
+719,مدل-طبیعت-001,4928,24054,true,2,domestic,"تابلو دکوراتیو طرح طبیعت با چاپ دقیق و رنگ های چشم نواز طراحی شده است. این محصول به دلیل کیفیت متریال، وضوح چاپ و ظاهر حرفه ای برای فضاهای خانگی و اداری مناسب بوده و جلوه ای گرم و زیبا ایجاد می کند.",تابلو نقاشی طرح طبیعت مدل 001,Nature Painting 001,21209|21210,15907,14500,زیبا,52502,51393,آبی,52453,تابلو دکوری مناسب فضای داخلی,19139,19150,35285,12,52450,رنگ‌آمیزی با کیفیت|ماندگاری بالا,حساس به رطوبت,400,600,5,800,420,620,30,900,images/tabloo_001_main.jpg|images/tabloo_001_side.jpg
+```
+
+### Example with Legacy Alias Columns (backwards compatible)
 
 ```csv
 brand_id,model,painting_type,is_iranian,product_classes,general_mefa_id,title_fa,title_en,attr_subject_ids,attr_technique_ids,attr_description,attr_piece_count,advantages,disadvantages,width,height,length,weight,package_width,package_height,package_length,package_weight,image_paths
-719,مدل-001,تابلو,true,,domestic,تابلو نقاشی طرح طبیعت مدل 001,,,,,,,,,,,,,,images/tabloo_001_main.jpg|images/tabloo_001_side.jpg
+5559,مدل-نوری-002,تابلو نوری,true,2,domestic,تابلو نوری طرح دریا مدل 002,Ocean Light Painting 002,21210,15907,تابلو نوری با نور ال‌ای‌دی,12,کم‌مصرف|نور یکنواخت,نیاز به برق,500,700,30,1500,520,720,50,1700,images/tabloo_002_main.jpg|images/tabloo_002_side.jpg
 ```
 
-### Complete Row
-
-```csv
-719,مدل-طبیعت-001,تابلو,true,2,domestic,تابلو نقاشی طرح طبیعت مدل 001,Nature Painting 001,21209|21210,15907,تابلو دکوری با رنگ‌بندی گرم,1,رنگ‌آمیزی با کیفیت|ماندگاری بالا,حساس به رطوبت,400,600,5,800,420,620,30,900,images/tabloo_001_main.jpg|images/tabloo_001_side.jpg
-```
-
-### Another Example
-
-```csv
-5559,مدل-نوری-002,تابلو نوری,true,2,domestic,تابلو نوری طرح دریا مدل 002,Ocean Light Painting 002,21210,15907,تابلو نوری با نور ال‌ای‌دی,1,کم‌مصرف|نور یکنواخت,نیاز به برق,500,700,30,1500,520,720,50,1700,images/tabloo_002_main.jpg|images/tabloo_002_side.jpg
-```
+**Note:** The legacy example above still works because `attr_subject_ids` → `attr_usage_type_ids`, `attr_technique_ids` → `attr_piece_count_select_ids`, and `attr_description` → `attr_extra_description` are automatically mapped in the uploader. `description` is a separate top-level required field and is not replaced by `attr_description`.
 
 ---
 
