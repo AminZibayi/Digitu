@@ -10,18 +10,11 @@ This file defines working rules for coding agents in this repository.
   - digikala-uploader.js: API execution flow and upload pipeline.
 - Reference source of truth for API shape: apiExamples.js and seller.digikala.com.har.
 
-## Reliability Baseline
-
-- Treat generated code as untrusted until verified.
-- Assume behavioral regressions are possible in every edit.
-- Prefer small, incremental changes over broad refactors.
-- Preserve existing public behavior unless explicitly requested.
-
 ## Safety Rules
 
 - Never log or commit session cookies or access tokens.
 - Redact sensitive headers in docs, examples, and errors.
-- Do not hardcode credentials in source files.
+- Do not hardcode credentials in source files but .env.
 - Keep authentication material in environment variables when possible.
 
 ## Coding Rules
