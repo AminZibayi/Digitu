@@ -1,0 +1,64 @@
+version: 1
+
+api:
+  baseUrl: https://seller.digikala.com/api/v2
+  cookie: ${DIGIKALA_COOKIE}
+  referer: https://seller.digikala.com/pwa/product/21581903/variant
+  themeId: 1
+  site: digikala
+  timeoutMs: 20000
+  maxRetries: 3
+  retryDelayMs: 800
+
+variantDefaults:
+  package_weight: 700
+  package_length: 100
+  package_height: 10
+  package_width: 100
+  lead_time: 2
+  marketplace_seller_stock: 100
+  order_limit: 30
+  warranty_id: 272
+  is_active: true
+  supplier_code: ""
+  fbs_lead_time: 48
+  shipping_type: both
+
+sizes:
+  - key: 100x70
+    themeValueId: 108432
+    active: true
+  - key: 130x200
+    themeValueId: 105738
+    active: true
+
+pricing:
+  baseCurrency: IRR
+  usdToBaseRate: 950000
+  defaultBasePrice: 18000000
+  basePriceBySize:
+    100x70: 21000000
+    130x200: 25000000
+  conflictResolution: first-match-wins
+  rules:
+    - id: size-100x70-kerm-usd
+      priority: 10
+      when:
+        sizesAny: [100x70]
+        titleIncludesAny: ["کرم"]
+      then:
+        # 100 USD equivalent in base currency (IRR) using usdToBaseRate
+        setUsdPrice: 100
+    - id: high-stock-large-size
+      priority: 20
+      when:
+        sizesAny: [130x200]
+        titleIncludesAny: ["تابلو", "مدرن"]
+      then:
+        setBasePrice: 27000000
+        overrideFields:
+          marketplace_seller_stock: 150
+
+idempotency:
+  enabled: true
+  stateFile: idempotency-state.json

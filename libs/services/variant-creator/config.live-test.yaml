@@ -1,0 +1,127 @@
+version: 1
+
+api:
+  baseUrl: https://seller.digikala.com/api/v2
+  cookie: ${DIGIKALA_COOKIE}
+  referer: https://seller.digikala.com/pwa/product/21581903/variant
+  themeId: 1
+  site: digikala
+  timeoutMs: 20000
+  maxRetries: 3
+  retryDelayMs: 800
+
+variantDefaults:
+  package_weight: 500
+  package_length: 50
+  package_height: 5
+  package_width: 50
+  lead_time: 2
+  marketplace_seller_stock: 50
+  order_limit: 20
+  warranty_id: 272
+  is_active: true
+  supplier_code: ""
+  fbs_lead_time: 48
+  shipping_type: both
+
+sizes:
+  - key: 10x15
+    themeValueId: 106087
+    active: true
+  - key: 15x20
+    themeValueId: 105785
+    active: true
+  - key: 20x30
+    themeValueId: 106732
+    active: true
+  - key: 30x40
+    themeValueId: 105789
+    active: true
+  - key: 40x60
+    themeValueId: 106164
+    active: true
+  - key: 50x70
+    themeValueId: 105743
+    active: true
+  - key: 60x90
+    themeValueId: 106347
+    active: true
+  - key: 70x100
+    themeValueId: 106181
+    active: true
+
+pricing:
+  baseCurrency: IRR
+  defaultBasePrice: 150000
+  basePriceBySize:
+    10x15: 150000
+    15x20: 200000
+    20x30: 300000
+    30x40: 420000
+    40x60: 850000
+    50x70: 1200000
+    60x90: 2000000
+    70x100: 2900000
+  conflictResolution: first-match-wins
+  rules:
+    # Wooden frames (کرم keyword) applied to all sizes - double the base price
+    - id: wooden-frame-kerm-10x15
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["10x15"]
+      then:
+        setBasePrice: 300000
+    - id: wooden-frame-kerm-15x20
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["15x20"]
+      then:
+        setBasePrice: 400000
+    - id: wooden-frame-kerm-20x30
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["20x30"]
+      then:
+        setBasePrice: 600000
+    - id: wooden-frame-kerm-30x40
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["30x40"]
+      then:
+        setBasePrice: 840000
+    - id: wooden-frame-kerm-40x60
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["40x60"]
+      then:
+        setBasePrice: 1700000
+    - id: wooden-frame-kerm-50x70
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["50x70"]
+      then:
+        setBasePrice: 2400000
+    - id: wooden-frame-kerm-60x90
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["60x90"]
+      then:
+        setBasePrice: 4000000
+    - id: wooden-frame-kerm-70x100
+      priority: 5
+      when:
+        titleIncludesAny: ["کرم"]
+        sizesAny: ["70x100"]
+      then:
+        setBasePrice: 5800000
+
+idempotency:
+  enabled: true
+  stateFile: idempotency-state.json

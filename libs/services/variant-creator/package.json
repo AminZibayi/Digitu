@@ -1,0 +1,25 @@
+{
+  "name": "digikala-variant-creator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single-application tool for creating Digikala variants on existing products",
+  "bin": {
+    "digikala-variant": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "variant:create": "node src/cli.js",
+    "test": "vitest run --globals",
+    "test:watch": "vitest --globals"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "dotenv": "^17.3.1",
+    "node-fetch": "^2.7.0",
+    "yaml": "^2.8.1"
+  }
+}
