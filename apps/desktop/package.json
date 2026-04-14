@@ -1,6 +1,8 @@
 {
   "name": "@digikala/desktop",
   "version": "1.0.0",
+  "description": "Digikala product and variant desktop automation suite",
+  "author": "Digikala Automation Team",
   "main": "dist/main.js",
   "scripts": {
     "start": "electron dist/main.js",
@@ -24,7 +26,10 @@
   "build": {
     "appId": "com.digikala.automation",
     "productName": "Digikala Automation Suite",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
     "directories": {
       "output": "release"
     },
