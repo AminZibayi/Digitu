@@ -5,6 +5,7 @@ export {};
 declare global {
   interface Window {
     electronAPI?: {
+      getStats: () => Promise<{ productsUploaded: number; variantsCreated: number; lastRunAt: string | null }>;
       getSettings: () => Promise<DigikalaSettingsState>;
       saveSettings: (settings: DigikalaSettingsPayload) => Promise<{ success: boolean; error?: string }>;
       onLogMessage: (cb: (log: LogEntry) => void) => () => void;

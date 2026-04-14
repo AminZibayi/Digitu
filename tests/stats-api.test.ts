@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildStatsPayload } from '../apps/backend/src/stats';
+import { buildStatsPayload, loadStatsPayload } from '../apps/backend/src/stats';
 
 describe('stats payload', () => {
   it('returns required dashboard counters', () => {
@@ -7,5 +7,9 @@ describe('stats payload', () => {
     expect(result.productsUploaded).toBe(3);
     expect(result.variantsCreated).toBe(7);
     expect(result.lastRunAt).toBeTruthy();
+  });
+
+  it('surfaces database failures instead of silently returning zero stats', () => {
+    expect(() => loadStatsPayload('Z:\\path\\that\\does\\not\\exist\\digikala-auto.sqlite')).toThrow();
   });
 });

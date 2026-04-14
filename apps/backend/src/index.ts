@@ -94,8 +94,14 @@ app.get('/api/settings', (_req, res) => {
 });
 
 app.get('/api/stats', (_req, res) => {
-  const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
-  res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
+  try {
+    const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
+    res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load stats';
+    logger.error('Failed to load stats', { error: message });
+    res.status(500).json({ success: false, error: message });
+  }
 });
 
 app.post('/api/settings', (req, res) => {

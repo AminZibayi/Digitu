@@ -17,32 +17,28 @@ export function buildStatsPayload(input: { productsUploaded: number; variantsCre
 }
 
 export function loadStatsPayload(dbPath: string): StatsPayload {
+  const sqlite = new DatabaseConstructor(dbPath, { readonly: true });
   try {
-    const sqlite = new DatabaseConstructor(dbPath, { readonly: true });
-    try {
-      const row = sqlite.prepare(`
-        SELECT
-          (SELECT COUNT(*) FROM products) AS productsUploaded,
-          (SELECT COUNT(*) FROM variant_state) AS variantsCreated,
-          (
-            SELECT MAX(createdAt)
-            FROM (
-              SELECT createdAt FROM products
-              UNION ALL
-              SELECT createdAt FROM variant_state
-            )
-          ) AS lastRunAt
-      `).get() as StatsRow | undefined;
+    const row = sqlite.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM products) AS productsUploaded,
+        (SELECT COUNT(*) FROM variant_state) AS variantsCreated,
+        (
+          SELECT MAX(createdAt)
+          FROM (
+            SELECT createdAt FROM products
+            UNION ALL
+            SELECT createdAt FROM variant_state
+          )
+        ) AS lastRunAt
+    `).get() as StatsRow | undefined;
 
-      return buildStatsPayload({
-        productsUploaded: Number(row?.productsUploaded ?? 0),
-        variantsCreated: Number(row?.variantsCreated ?? 0),
-        lastRunAt: row?.lastRunAt ?? null,
-      });
-    } finally {
-      sqlite.close();
-    }
-  } catch {
-    return buildStatsPayload({ productsUploaded: 0, variantsCreated: 0, lastRunAt: null });
+    return buildStatsPayload({
+      productsUploaded: Number(row?.productsUploaded ?? 0),
+      variantsCreated: Number(row?.variantsCreated ?? 0),
+      lastRunAt: row?.lastRunAt ?? null,
+    });
+  } finally {
+    sqlite.close();
   }
 }
