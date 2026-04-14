@@ -4,16 +4,25 @@ import { Database, DigikalaClient, DigikalaSettings, logger, normalizeDigikalaSe
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
+import { formatNativeModuleReadinessError } from './runtimeReadiness';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
-const db = new Database(dbPath);
+let db: Database | null = null;
 const settingsStore = new SettingsStore(settingsPath);
 let settings: DigikalaSettings | null = null;
 
 let mainWindow: BrowserWindow | null = null;
 
 app.whenReady().then(() => {
+    try {
+        db = new Database(dbPath);
+    } catch (error: unknown) {
+        dialog.showErrorBox('Startup Error', formatNativeModuleReadinessError(String(error)));
+        app.quit();
+        return;
+    }
+
     try {
         settings = settingsStore.load();
     } catch (error: unknown) {
@@ -63,6 +72,9 @@ app.whenReady().then(() => {
     const getServices = (): { uploader: ProductUploaderService; creator: VariantCreatorService } => {
         if (!settings) {
             throw new Error('Digikala settings are not configured. Open Settings and save credentials first.');
+        }
+        if (!db) {
+            throw new Error('Database is not initialized.');
         }
         const client = buildClient(settings);
         return {
@@ -159,7 +171,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        db.close();
+        if (db) {
+            db.close();
+        }
         app.quit();
     }
 });
