@@ -13,6 +13,13 @@ interface IpcProgressEvent {
     status: string;
 }
 
+interface LogEntry {
+    timestamp: string;
+    level: 'error' | 'warn' | 'info' | 'debug';
+    message: string;
+    data?: Record<string, unknown>;
+}
+
 interface DigikalaSettingsPayload {
     cookie: string;
     baseUrl?: string;
@@ -33,8 +40,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveSettings: (settings: DigikalaSettingsPayload) => ipcRenderer.invoke('save-settings', settings) as Promise<IpcResult>,
 
     // Shared
-    onLogMessage: (callback: (log: unknown) => void) => {
-        const listener = (_event: unknown, log: unknown) => callback(log);
+    onLogMessage: (callback: (log: LogEntry) => void) => {
+        const listener = (_event: unknown, log: LogEntry) => callback(log);
         ipcRenderer.on('log-message', listener);
         return () => ipcRenderer.removeListener('log-message', listener);
     },

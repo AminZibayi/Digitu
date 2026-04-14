@@ -64,6 +64,18 @@ export function parseRunVariantCreationInput(
   if (!Array.isArray(config.sizes) || config.sizes.length === 0) {
     throw new Error('config.sizes must be a non-empty array');
   }
+  config.sizes.forEach((item, index) => {
+    const size = asRecord(item, `config.sizes[${index}]`);
+    asNonEmptyString(size.key, `config.sizes[${index}].key`);
+    const themeValueId = Number(size.themeValueId);
+    const price = Number(size.price);
+    if (!Number.isInteger(themeValueId) || themeValueId <= 0) {
+      throw new Error(`config.sizes[${index}].themeValueId must be a positive integer`);
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new Error(`config.sizes[${index}].price must be a positive number`);
+    }
+  });
 
   return {
     products,
