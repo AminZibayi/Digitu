@@ -1,0 +1,165 @@
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import path from 'path';
+import { Database, DigikalaClient, DigikalaSettings, logger, normalizeDigikalaSettings } from '@digikala/core';
+import { ProductUploaderService } from '@digikala/product-uploader';
+import { VariantCreatorService } from '@digikala/variant-creator';
+import { SettingsStore } from './SettingsStore';
+
+const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
+const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
+const db = new Database(dbPath);
+const settingsStore = new SettingsStore(settingsPath);
+let settings: DigikalaSettings | null = null;
+
+let mainWindow: BrowserWindow | null = null;
+
+app.whenReady().then(() => {
+    try {
+        settings = settingsStore.load();
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'unknown error';
+        logger.warn('Failed to load encrypted settings', { error: message });
+    }
+
+    mainWindow = new BrowserWindow({
+        width: 1280,
+        height: 860,
+        minWidth: 900,
+        minHeight: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+    });
+
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev) {
+        mainWindow.loadURL('http://localhost:3000');
+        mainWindow.webContents.openDevTools();
+    } else {
+        const frontendPath = path.join(process.resourcesPath, 'frontend', 'out', 'index.html');
+        mainWindow.loadFile(frontendPath);
+    }
+
+    logger.on('log', (entry) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('log-message', entry);
+        }
+    });
+
+    logger.info('Electron backend initialized', { dbPath, hasSettings: Boolean(settings) });
+
+    const buildClient = (cfg: DigikalaSettings): DigikalaClient =>
+        new DigikalaClient({
+            cookie: cfg.cookie,
+            baseUrl: cfg.baseUrl,
+            referer: cfg.referer,
+            timeoutMs: cfg.timeoutMs,
+            maxRetries: cfg.maxRetries,
+            retryDelayMs: cfg.retryDelayMs,
+        });
+
+    const getServices = (): { uploader: ProductUploaderService; creator: VariantCreatorService } => {
+        if (!settings) {
+            throw new Error('Digikala settings are not configured. Open Settings and save credentials first.');
+        }
+        const client = buildClient(settings);
+        return {
+            uploader: new ProductUploaderService(client, db),
+            creator: new VariantCreatorService(client, db),
+        };
+    };
+
+    ipcMain.handle('get-settings', async () => {
+        return settings
+            ? {
+                  configured: true,
+                  hasCookie: Boolean(settings.cookie),
+                  baseUrl: settings.baseUrl,
+                  referer: settings.referer,
+                  timeoutMs: settings.timeoutMs,
+                  maxRetries: settings.maxRetries,
+                  retryDelayMs: settings.retryDelayMs,
+              }
+            : { configured: false };
+    });
+
+    ipcMain.handle('save-settings', async (_event, payload: Record<string, unknown>) => {
+        const mergedPayload: Record<string, unknown> = { ...(payload || {}) };
+        if (!mergedPayload.cookie && settings?.cookie) {
+            mergedPayload.cookie = settings.cookie;
+        }
+        settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
+        logger.info('Digikala settings saved');
+        return { success: true };
+    });
+
+    ipcMain.handle('run-upload', async (event, csvPath: string) => {
+        try {
+            const normalizedPath = String(csvPath ?? '').trim();
+            if (!normalizedPath) {
+                throw new Error('csvPath is required');
+            }
+            logger.info('Received IPC: run-upload', { csvPath: normalizedPath });
+            const services = getServices();
+            const results = await services.uploader.runUpload(
+                normalizedPath,
+                (index, total, title, status) => {
+                    event.sender.send('upload-progress', { index, total, title, status });
+                },
+            );
+            return { success: true, results };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Upload failed';
+            logger.error('Upload completely failed', { error: message });
+            return { success: false, error: message };
+        }
+    });
+
+    ipcMain.handle('run-variant-creation', async (event, products: any[], config: any, dryRun: boolean) => {
+        try {
+            if (!Array.isArray(products) || products.length === 0) {
+                throw new Error('products must be a non-empty array');
+            }
+            if (!config || typeof config !== 'object') {
+                throw new Error('config must be an object');
+            }
+            logger.info('Received IPC: run-variant-creation', { products: products.length, dryRun: Boolean(dryRun) });
+            const services = getServices();
+            const results = await services.creator.runCreation(
+                products,
+                config,
+                dryRun,
+                (index, total, title, status) => {
+                    event.sender.send('variant-progress', { index, total, title, status });
+                },
+            );
+            return { success: true, results };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Variant creation failed';
+            logger.error('Variant creation completely failed', { error: message });
+            return { success: false, error: message };
+        }
+    });
+
+    ipcMain.handle('pick-csv-path', async () => {
+        if (!mainWindow) return null;
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: 'Select products CSV file',
+            properties: ['openFile'],
+            filters: [{ name: 'CSV files', extensions: ['csv'] }],
+        });
+        if (result.canceled || result.filePaths.length === 0) {
+            return null;
+        }
+        return result.filePaths[0];
+    });
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        db.close();
+        app.quit();
+    }
+});
