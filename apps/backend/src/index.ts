@@ -2,12 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { Database, DigikalaClient, DigikalaSettings, logger } from '@digikala/core';
+import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
 import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreationRequest } from './requestValidation';
-import { buildStatsPayload, loadStatsPayload } from './stats';
 
 const app = express();
 app.use(cors());

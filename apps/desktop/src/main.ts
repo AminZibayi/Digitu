@@ -1,12 +1,10 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'path';
-import { Database, DigikalaClient, DigikalaSettings, logger, normalizeDigikalaSettings } from '@digikala/core';
+import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, normalizeDigikalaSettings } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
-
-const DatabaseConstructor = require('better-sqlite3');
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
@@ -15,39 +13,6 @@ const settingsStore = new SettingsStore(settingsPath);
 let settings: DigikalaSettings | null = null;
 
 let mainWindow: BrowserWindow | null = null;
-
-interface StatsRow {
-    productsUploaded: number;
-    variantsCreated: number;
-    lastRunAt: string | null;
-}
-
-function loadStatsFromDbPath(dbPathValue: string) {
-    const sqlite = new DatabaseConstructor(dbPathValue, { readonly: true });
-    try {
-        const row = sqlite.prepare(`
-            SELECT
-                (SELECT COUNT(*) FROM products) AS productsUploaded,
-                (SELECT COUNT(*) FROM variant_state) AS variantsCreated,
-                (
-                    SELECT MAX(createdAt)
-                    FROM (
-                        SELECT createdAt FROM products
-                        UNION ALL
-                        SELECT createdAt FROM variant_state
-                    )
-                ) AS lastRunAt
-        `).get() as StatsRow | undefined;
-
-        return {
-            productsUploaded: Number(row?.productsUploaded ?? 0),
-            variantsCreated: Number(row?.variantsCreated ?? 0),
-            lastRunAt: row?.lastRunAt ?? null,
-        };
-    } finally {
-        sqlite.close();
-    }
-}
 
 app.whenReady().then(() => {
     try {
@@ -132,7 +97,7 @@ app.whenReady().then(() => {
             : { configured: false };
     });
 
-    ipcMain.handle('get-stats', async () => loadStatsFromDbPath(dbPath));
+    ipcMain.handle('get-stats', async () => loadStatsPayload(dbPath));
 
     ipcMain.handle('save-settings', async (_event, payload: Record<string, unknown>) => {
         const mergedPayload: Record<string, unknown> = { ...(payload || {}) };

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildStatsPayload, loadStatsPayload } from '../apps/backend/src/stats';
+import { buildStatsPayload, loadStatsPayload } from '../packages/core/src/stats';
 
 describe('stats payload', () => {
+  it('exports stats loader from core package entrypoint', async () => {
+    const core = await import('../packages/core/src');
+    expect(typeof core.loadStatsPayload).toBe('function');
+  });
+
   it('returns required dashboard counters', () => {
     const result = buildStatsPayload({ productsUploaded: 3, variantsCreated: 7, lastRunAt: '2026-01-01T00:00:00.000Z' });
     expect(result.productsUploaded).toBe(3);
