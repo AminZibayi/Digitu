@@ -9,4 +9,6 @@ release/
 .env.local
 .worktrees/
 worktrees/
+.worktrees
+worktrees
 .playwright-mcp
