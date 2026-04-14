@@ -7,6 +7,7 @@ import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
 import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreationRequest } from './requestValidation';
+import { loadStatsPayload } from './stats';
 
 const app = express();
 app.use(cors());
@@ -90,6 +91,10 @@ app.get('/api/settings', (_req, res) => {
         }
       : { configured: false },
   });
+});
+
+app.get('/api/stats', (_req, res) => {
+  res.json({ success: true, stats: loadStatsPayload(dbPath) });
 });
 
 app.post('/api/settings', (req, res) => {

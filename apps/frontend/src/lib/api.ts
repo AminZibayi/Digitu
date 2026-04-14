@@ -42,6 +42,11 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  getStats: async () => {
+    const json = await fetchJson<{ success: true; stats: { productsUploaded: number; variantsCreated: number; lastRunAt: string | null } }>('/api/stats');
+    return json.stats;
+  },
+
   getSettings: async (): Promise<DigikalaSettingsState> => {
     if (isElectron) {
       return window.electronAPI!.getSettings();
