@@ -7,15 +7,21 @@ declare global {
     electronAPI?: {
       getStats: () => Promise<{ productsUploaded: number; variantsCreated: number; lastRunAt: string | null }>;
       getSettings: () => Promise<DigikalaSettingsState>;
-      saveSettings: (settings: DigikalaSettingsPayload) => Promise<{ success: boolean; error?: string }>;
+      saveSettings: (settings: DigikalaSettingsPayload) => Promise<IpcHandlerResult>;
       onLogMessage: (cb: (log: LogEntry) => void) => () => void;
-      runUpload: (csvPath: string) => Promise<{ success: boolean; results?: unknown[]; error?: string }>;
+      runUpload: (csvPath: string) => Promise<IpcHandlerResult>;
       onUploadProgress: (cb: (data: IpcProgressEvent) => void) => () => void;
-      runVariantCreation: (products: unknown[], config: Record<string, unknown>, dryRun: boolean) => Promise<{ success: boolean; results?: unknown[]; error?: string }>;
+      runVariantCreation: (products: VariantCreationProductsInput, config: VariantCreationConfigInput, dryRun: boolean) => Promise<IpcHandlerResult>;
       onVariantProgress: (cb: (data: IpcProgressEvent) => void) => () => void;
       pickCsvPath: () => Promise<string | null>;
     };
   }
+}
+
+export interface IpcHandlerResult {
+  success: boolean;
+  results?: unknown[];
+  error?: string;
 }
 
 export interface LogEntry {
@@ -40,6 +46,9 @@ export interface DigikalaSettingsPayload {
   maxRetries?: number;
   retryDelayMs?: number;
 }
+
+export type VariantCreationProductsInput = unknown[];
+export type VariantCreationConfigInput = Record<string, unknown>;
 
 export interface DigikalaSettingsState {
   configured: boolean;

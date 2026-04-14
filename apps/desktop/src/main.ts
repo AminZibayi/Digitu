@@ -4,6 +4,7 @@ import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, n
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
+import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput } from './ipcContracts';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
@@ -99,22 +100,16 @@ app.whenReady().then(() => {
 
     ipcMain.handle('get-stats', async () => loadStatsPayload(dbPath));
 
-    ipcMain.handle('save-settings', async (_event, payload: Record<string, unknown>) => {
-        const mergedPayload: Record<string, unknown> = { ...(payload || {}) };
-        if (!mergedPayload.cookie && settings?.cookie) {
-            mergedPayload.cookie = settings.cookie;
-        }
+    ipcMain.handle('save-settings', async (_event, payload: unknown) => {
+        const mergedPayload = parseSaveSettingsInput(payload, settings?.cookie ?? null);
         settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
         logger.info('Digikala settings saved');
         return { success: true };
     });
 
-    ipcMain.handle('run-upload', async (event, csvPath: string) => {
+    ipcMain.handle('run-upload', async (event, csvPath: unknown) => {
         try {
-            const normalizedPath = String(csvPath ?? '').trim();
-            if (!normalizedPath) {
-                throw new Error('csvPath is required');
-            }
+            const normalizedPath = parseRunUploadInput(csvPath);
             logger.info('Received IPC: run-upload', { csvPath: normalizedPath });
             const services = getServices();
             const results = await services.uploader.runUpload(
@@ -131,20 +126,15 @@ app.whenReady().then(() => {
         }
     });
 
-    ipcMain.handle('run-variant-creation', async (event, products: any[], config: any, dryRun: boolean) => {
+    ipcMain.handle('run-variant-creation', async (event, products: unknown, config: unknown, dryRun: unknown) => {
         try {
-            if (!Array.isArray(products) || products.length === 0) {
-                throw new Error('products must be a non-empty array');
-            }
-            if (!config || typeof config !== 'object') {
-                throw new Error('config must be an object');
-            }
-            logger.info('Received IPC: run-variant-creation', { products: products.length, dryRun: Boolean(dryRun) });
+            const parsedInput = parseRunVariantCreationInput(products, config, dryRun);
+            logger.info('Received IPC: run-variant-creation', { products: parsedInput.products.length, dryRun: parsedInput.dryRun });
             const services = getServices();
             const results = await services.creator.runCreation(
-                products,
-                config,
-                dryRun,
+                parsedInput.products,
+                parsedInput.config,
+                parsedInput.dryRun,
                 (index, total, title, status) => {
                     event.sender.send('variant-progress', { index, total, title, status });
                 },
