@@ -4,7 +4,7 @@ import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, n
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
-import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput } from './ipcContracts';
+import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
@@ -101,10 +101,16 @@ app.whenReady().then(() => {
     ipcMain.handle('get-stats', async () => loadStatsPayload(dbPath));
 
     ipcMain.handle('save-settings', async (_event, payload: unknown) => {
-        const mergedPayload = parseSaveSettingsInput(payload, settings?.cookie ?? null);
-        settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
-        logger.info('Digikala settings saved');
-        return { success: true };
+        try {
+            const mergedPayload = parseSaveSettingsInput(payload, settings?.cookie ?? null);
+            settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
+            logger.info('Digikala settings saved');
+            return { success: true };
+        } catch (error: unknown) {
+            const failure = toIpcErrorEnvelope(error, 'Failed to save settings');
+            logger.error('Failed to save settings', { error: failure.error });
+            return failure;
+        }
     });
 
     ipcMain.handle('run-upload', async (event, csvPath: unknown) => {

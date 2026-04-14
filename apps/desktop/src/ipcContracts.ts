@@ -8,6 +8,11 @@ export interface ParsedRunVariantCreationInput {
   dryRun: boolean;
 }
 
+export interface IpcErrorEnvelope {
+  success: false;
+  error: string;
+}
+
 function asRecord(value: unknown, context: string): GenericRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${context} must be an object`);
@@ -35,6 +40,13 @@ export function parseSaveSettingsInput(payload: unknown, existingCookie: string 
     mergedPayload.cookie = existingCookie;
   }
   return mergedPayload;
+}
+
+export function toIpcErrorEnvelope(error: unknown, fallbackMessage: string): IpcErrorEnvelope {
+  return {
+    success: false,
+    error: error instanceof Error ? error.message : fallbackMessage,
+  };
 }
 
 export function parseRunVariantCreationInput(

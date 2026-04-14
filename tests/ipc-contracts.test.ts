@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput } from '../apps/desktop/src/ipcContracts';
+import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from '../apps/desktop/src/ipcContracts';
 
 describe('ipc contracts', () => {
   it('rejects empty csv path', () => {
@@ -15,6 +15,22 @@ describe('ipc contracts', () => {
   it('keeps incoming cookie when provided', () => {
     const parsed = parseSaveSettingsInput({ cookie: 'new-cookie' }, 'existing-cookie');
     expect(parsed.cookie).toBe('new-cookie');
+  });
+
+  it('wraps invalid save-settings input in stable error envelope', () => {
+    const result = (() => {
+      try {
+        parseSaveSettingsInput(null, null);
+        return { success: true };
+      } catch (error: unknown) {
+        return toIpcErrorEnvelope(error, 'Failed to save settings');
+      }
+    })();
+
+    expect(result).toEqual({
+      success: false,
+      error: 'settings must be an object',
+    });
   });
 
   it('rejects variant creation with empty products', () => {
