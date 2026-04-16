@@ -1,26 +1,19 @@
 {
-  "name": "digikala-variant-creator",
+  "name": "@digikala/variant-creator",
   "version": "1.0.0",
-  "private": true,
-  "description": "Single-application tool for creating Digikala variants on existing products",
-  "bin": {
-    "digikala-variant": "src/cli.js"
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "start": "node src/cli.js",
-    "update": "pnpm run --silent run -- --config ./config.live-test.yaml --input ./fixtures/products.live-test.json --output-dir ./output",
-    "dry-run": "pnpm run --silent run -- --config ./config.live-test.yaml --input ./fixtures/products.live-test.json --dry-run",
-    "test": "vitest run --globals",
-    "test:watch": "vitest --globals"
-  },
-  "devDependencies": {
-    "vitest": "^2.1.9"
+    "build": "tsc"
   },
   "dependencies": {
+    "@digikala/core": "workspace:*",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "dotenv": "^17.3.1",
-    "node-fetch": "^2.7.0",
     "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }

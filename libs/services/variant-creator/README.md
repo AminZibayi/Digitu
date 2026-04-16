@@ -137,7 +137,7 @@ Per product, result includes:
 
 - Validates config and input before any API POST.
 - Dry-run mode computes exact payload and prices only.
-- Retries transient API failures (`429`, `5xx`, network).
+- Retries transient API failures (`5xx`, network) and skips responses that say `Too Many Requests`.
 - Idempotency safeguards:
   - checks local state fingerprints
   - attempts to detect already-existing variants from API GET
