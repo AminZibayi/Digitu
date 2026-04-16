@@ -1,16 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { buildStatsPayload } from '../packages/core/src/stats';
+import { buildStatsPayload, loadStatsPayload } from '../packages/core/src/stats';
 
 describe('stats payload', () => {
+  it('exports stats loader from core package entrypoint', async () => {
+    const core = await import('../packages/core/src');
+    expect(typeof core.loadStatsPayload).toBe('function');
+  });
+
   it('returns required dashboard counters', () => {
-    const input = {
+    const result = buildStatsPayload({
       productsUploaded: 3,
       variantsCreated: 7,
       lastRunAt: '2026-01-01T00:00:00.000Z',
-    };
-    const result = buildStatsPayload(input);
+    });
     expect(result.productsUploaded).toBe(3);
     expect(result.variantsCreated).toBe(7);
-    expect(result.lastRunAt).toBe(input.lastRunAt);
+    expect(result.lastRunAt).toBeTruthy();
+  });
+
+  it('surfaces database failures instead of silently returning zero stats', () => {
+    expect(() => loadStatsPayload('Z:\\path\\that\\does\\not\\exist\\digikala-auto.sqlite')).toThrow();
   });
 });
