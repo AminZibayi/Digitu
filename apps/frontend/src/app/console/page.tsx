@@ -18,6 +18,14 @@ const CHIP: Record<string, string> = {
   debug: 'chip-muted',
 };
 
+const LEVEL_LABEL: Record<string, string> = {
+  all: 'همه',
+  info: 'اطلاعات',
+  warn: 'هشدار',
+  error: 'خطا',
+  debug: 'اشکال‌زدایی',
+};
+
 export default function ConsolePage() {
   const [logs, setLogs]       = useState<LogEntry[]>([]);
   const [filter, setFilter]   = useState<string>('all');
@@ -47,9 +55,9 @@ export default function ConsolePage() {
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-4 h-full">
       <div>
-        <h1 className="text-2xl font-bold">Live Console</h1>
+        <h1 className="text-2xl font-bold">کنسول زنده</h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          Real-time structured log stream from the Electron backend.
+          جریان لحظه‌ای لاگ‌های ساختاریافته از بک‌اند Electron.
         </p>
       </div>
 
@@ -66,14 +74,14 @@ export default function ConsolePage() {
                 ? 'border-[var(--accent)] bg-[var(--accent-glow)] text-white'
                 : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-white/20 hover:text-[var(--foreground)]'}`}
           >
-            {lvl.toUpperCase()}
+            {LEVEL_LABEL[lvl] ?? lvl.toUpperCase()}
           </button>
         ))}
 
         {/* Search */}
         <input
           type="text"
-          placeholder="Search messages…"
+          placeholder="جستجوی پیام‌ها…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="ml-auto px-3 py-1.5 rounded-lg text-xs bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--foreground)] outline-none focus:border-[var(--accent)] transition-colors w-48"
@@ -81,10 +89,10 @@ export default function ConsolePage() {
 
         {/* Pause / clear */}
         <button id="pause-btn" onClick={() => setPaused((p) => !p)} className="btn-ghost text-xs py-1.5 px-3">
-          {paused ? '▶ Resume' : '⏸ Pause'}
+          {paused ? '▶ ادامه' : '⏸ توقف'}
         </button>
         <button id="clear-btn" onClick={() => setLogs([])} className="btn-ghost text-xs py-1.5 px-3">
-          🗑 Clear
+          🗑 پاک‌سازی
         </button>
       </div>
 
@@ -92,25 +100,25 @@ export default function ConsolePage() {
       <div className="glass-card flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1 min-h-[420px]">
         {visible.length === 0 && (
           <p className="text-[var(--foreground-muted)] text-center mt-16">
-            {logs.length === 0 ? 'Waiting for log events from the backend…' : 'No entries match your filter.'}
+            {logs.length === 0 ? 'در انتظار دریافت لاگ از بک‌اند…' : 'موردی مطابق فیلتر پیدا نشد.'}
           </p>
         )}
         {visible.map((entry, i) => (
           <div key={i} className={`flex gap-3 items-start hover:bg-white/5 px-2 py-1 rounded-lg transition-colors ${LEVEL_CLASS[entry.level] ?? ''}`}>
             <span className="text-[var(--foreground-muted)] shrink-0 tabular-nums w-[170px]">
-              {new Date(entry.timestamp).toLocaleTimeString('en-GB', { hour12: false, fractionalSecondDigits: 3 })}
+              {new Date(entry.timestamp).toLocaleTimeString('fa-IR', { hour12: false, fractionalSecondDigits: 3 })}
             </span>
-            <span className={`shrink-0 ${CHIP[entry.level] ?? 'chip-muted'}`}>{entry.level}</span>
+            <span className={`shrink-0 ${CHIP[entry.level] ?? 'chip-muted'}`}>{LEVEL_LABEL[entry.level] ?? entry.level}</span>
             <span className="break-all">{entry.message}
               {entry.data && (
-                <span className="text-[var(--foreground-muted)] ml-2">{JSON.stringify(entry.data)}</span>
+                <span className="text-[var(--foreground-muted)] mr-2">{JSON.stringify(entry.data)}</span>
               )}
             </span>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
-      <p className="text-[10px] text-[var(--foreground-muted)]">{visible.length} entries shown · capped at 500</p>
+      <p className="text-[10px] text-[var(--foreground-muted)]">{visible.length} رکورد نمایش داده شد · حداکثر ۵۰۰ رکورد</p>
     </div>
   );
 }

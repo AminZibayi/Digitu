@@ -1,4 +1,4 @@
-import { DigikalaSettingsPayload, DigikalaSettingsState, LogEntry, IpcProgressEvent } from '../app/globals.d';
+import { ApiErrorResponse, DigikalaSettingsPayload, DigikalaSettingsState, LogEntry, IpcProgressEvent } from '../app/globals.d';
 
 const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 const API_BASE = isElectron ? '' : (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '');
@@ -36,9 +36,38 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, init);
   const json = await res.json();
   if (!res.ok || !json.success) {
-    throw new Error(json.error || `Request failed: ${res.status}`);
+    const errorPayload = toErrorPayload(json.error, res.status);
+    throw new ApiRequestError(errorPayload.code, errorPayload.message);
   }
   return json as T;
+}
+
+export class ApiRequestError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+function toErrorPayload(error: unknown, status: number): { code: string; message: string } {
+  if (typeof error === 'string') {
+    return { code: 'UNKNOWN_ERROR', message: error };
+  }
+
+  if (error && typeof error === 'object') {
+    const payload = error as ApiErrorResponse;
+    const code = typeof payload.code === 'string' ? payload.code : 'UNKNOWN_ERROR';
+    const message = typeof payload.message === 'string' ? payload.message : `Request failed: ${status}`;
+    return { code, message };
+  }
+
+  return {
+    code: 'UNKNOWN_ERROR',
+    message: `Request failed: ${status}`,
+  };
 }
 
 export const api = {

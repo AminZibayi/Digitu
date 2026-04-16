@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../lib/api';
+import { ApiRequestError, api } from '../lib/api';
+import { resolvePersianErrorMessage } from '../lib/errorDictionary';
 
 interface DashboardStats {
   productsUploaded: number;
@@ -29,7 +30,12 @@ export default function Dashboard() {
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          const message = error instanceof Error ? error.message : 'Failed to load stats';
+          let message: string;
+          if (error instanceof ApiRequestError) {
+            message = resolvePersianErrorMessage(error.code, error.message);
+          } else {
+            message = error instanceof Error ? error.message : 'بارگذاری آمار ناموفق بود';
+          }
           setStatsError(message);
         }
       });
@@ -41,10 +47,10 @@ export default function Dashboard() {
 
   const stats = useMemo(
     () => [
-      { label: 'Products Uploaded', value: String(statsData.productsUploaded), icon: '📦', color: '#ef394e' },
-      { label: 'Variants Created', value: String(statsData.variantsCreated), icon: '🧩', color: '#7c5cbf' },
-      { label: 'Last Run', value: statsData.lastRunAt ? new Date(statsData.lastRunAt).toLocaleString() : 'Never', icon: '🕒', color: '#22c55e' },
-      { label: 'DB Status', value: statsError ? 'Unavailable' : 'Healthy', icon: '🗄️', color: '#3b82f6' },
+      { label: 'محصولات آپلودشده', value: String(statsData.productsUploaded), icon: '📦', color: '#ef394e' },
+      { label: 'تنوع‌های ایجادشده', value: String(statsData.variantsCreated), icon: '🧩', color: '#7c5cbf' },
+      { label: 'آخرین اجرا', value: statsData.lastRunAt ? new Date(statsData.lastRunAt).toLocaleString('fa-IR') : 'هرگز', icon: '🕒', color: '#22c55e' },
+      { label: 'وضعیت پایگاه داده', value: statsError ? 'در دسترس نیست' : 'سالم', icon: '🗄️', color: '#3b82f6' },
     ],
     [statsData, statsError],
   );
@@ -53,9 +59,9 @@ export default function Dashboard() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">داشبورد</h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          System overview and quick actions for your automation suite.
+          نمای کلی سیستم و میانبرهای عملیاتی مجموعه اتوماسیون.
         </p>
       </div>
 
@@ -79,22 +85,22 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card p-6 space-y-4">
           <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-            <span>📤</span> Product Uploader
+            <span>📤</span> آپلود محصولات
           </h2>
           <p className="text-sm text-[var(--foreground-muted)]">
-            Upload products in bulk from a CSV file. Real-time progress tracking with per-row status.
+            آپلود گروهی محصولات از فایل CSV با نمایش پیشرفت لحظه‌ای در سطح هر ردیف.
           </p>
-          <a href="/uploader" className="btn-primary w-full text-center">Open Uploader</a>
+          <a href="/uploader" className="btn-primary w-full text-center">باز کردن آپلودر</a>
         </div>
 
         <div className="glass-card p-6 space-y-4">
           <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-            <span>🧩</span> Variant Creator
+            <span>🧩</span> ایجاد تنوع
           </h2>
           <p className="text-sm text-[var(--foreground-muted)]">
-            Auto-generate size and price variants with idempotency protection and dry-run support.
+            تولید خودکار تنوع‌های سایز و قیمت با پشتیبانی از اجرای آزمایشی و جلوگیری از ثبت تکراری.
           </p>
-          <a href="/variants" className="btn-primary w-full text-center">Open Creator</a>
+          <a href="/variants" className="btn-primary w-full text-center">باز کردن ابزار تنوع</a>
         </div>
       </div>
 
@@ -103,11 +109,11 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           <span className="text-lg">🔗</span>
           <div>
-            <div className="text-sm font-medium">Digikala Seller API</div>
-            <div className="text-xs text-[var(--foreground-muted)]">Configure your session cookie to enable services</div>
+            <div className="text-sm font-medium">رابط فروشنده دیجی‌کالا</div>
+            <div className="text-xs text-[var(--foreground-muted)]">برای فعال شدن سرویس‌ها، کوکی سشن را تنظیم کنید</div>
           </div>
         </div>
-        <span className="chip-warn">Not configured</span>
+        <span className="chip-warn">تنظیم نشده</span>
       </div>
     </div>
   );

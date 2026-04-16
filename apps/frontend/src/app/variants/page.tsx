@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { IpcProgressEvent } from '../globals.d';
-import { api } from '../../lib/api';
+import { ApiRequestError, api } from '../../lib/api';
+import { resolvePersianErrorMessage } from '../../lib/errorDictionary';
 
 interface RowStatus {
   index: number;
@@ -11,8 +12,8 @@ interface RowStatus {
 }
 
 const DEFAULT_PRODUCTS = JSON.stringify([
-  { productId: 12345678, productTitle: 'Sample Product A' },
-  { productId: 87654321, productTitle: 'Sample Product B' },
+  { productId: 12345678, productTitle: 'محصول نمونه ۱' },
+  { productId: 87654321, productTitle: 'محصول نمونه ۲' },
 ], null, 2);
 
 const DEFAULT_CONFIG = JSON.stringify({
@@ -63,6 +64,14 @@ export default function VariantsPage() {
     return 'chip-muted';
   };
 
+  const statusLabel = (status: string) => {
+    if (status.includes('success')) return 'موفق';
+    if (status === 'failed') return 'ناموفق';
+    if (status.includes('skipped')) return 'رد شد';
+    if (status === 'processing') return 'در حال پردازش';
+    return status;
+  };
+
   const handleRun = useCallback(async () => {
     let products: any[];
     let config: any;
@@ -71,7 +80,7 @@ export default function VariantsPage() {
       config = JSON.parse(configJson);
       setJsonError(null);
     } catch {
-      setJsonError('Invalid JSON. Fix products/config before running.');
+      setJsonError('JSON نامعتبر است. قبل از اجرا، ورودی‌ها را اصلاح کنید.');
       return;
     }
     setRunning(true);
@@ -80,11 +89,13 @@ export default function VariantsPage() {
     try {
       const res = await api.runVariantCreation(products, config, dryRun);
       setResult(res.success
-        ? `✅ Completed${dryRun ? ' (dry-run)' : ''}: ${res.results?.filter((r: any) => String(r.status).includes('success')).length} products processed successfully.`
-        : `❌ Error: ${res.error}`);
+        ? `✅ تکمیل شد${dryRun ? ' (آزمایشی)' : ''}: ${res.results?.filter((r: any) => String(r.status).includes('success')).length ?? 0} محصول با موفقیت پردازش شد.`
+        : `❌ خطا: ${typeof res.error === 'string' ? res.error : res.error?.message ?? 'Variant creation failed'}`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Variant creation failed';
-      setResult(`❌ Error: ${message}`);
+      const message = error instanceof ApiRequestError
+        ? resolvePersianErrorMessage(error.code, error.message)
+        : (error instanceof Error ? error.message : 'ایجاد تنوع ناموفق بود');
+      setResult(`❌ خطا: ${message}`);
     } finally {
       setRunning(false);
     }
@@ -97,16 +108,16 @@ export default function VariantsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Variant Creator</h1>
+        <h1 className="text-2xl font-bold">ایجاد تنوع</h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          Generate product variants with idempotency checks and optional dry-run mode.
+          تولید تنوع محصول با کنترل عدم تکرار و امکان اجرای آزمایشی.
         </p>
       </div>
 
       {/* Product list input */}
       <div className="glass-card p-5 space-y-3">
         <label className="text-sm font-medium text-[var(--foreground-muted)]">
-          Products (JSON array with <code className="text-[var(--accent)]">productId</code> and <code className="text-[var(--accent)]">productTitle</code>)
+          محصولات (آرایه JSON شامل <code className="text-[var(--accent)]">productId</code> و <code className="text-[var(--accent)]">productTitle</code>)
         </label>
         <textarea
           id="products-json"
@@ -118,7 +129,7 @@ export default function VariantsPage() {
         {jsonError && <p className="text-xs text-red-400">{jsonError}</p>}
 
         <label className="text-sm font-medium text-[var(--foreground-muted)] pt-2 block">
-          Variant Config JSON (<code className="text-[var(--accent)]">themeId</code>, <code className="text-[var(--accent)]">sizes</code>, optional <code className="text-[var(--accent)]">defaults</code>)
+          تنظیمات تنوع (JSON شامل <code className="text-[var(--accent)]">themeId</code>، <code className="text-[var(--accent)]">sizes</code> و اختیاری <code className="text-[var(--accent)]">defaults</code>)
         </label>
         <textarea
           id="config-json"
@@ -130,23 +141,23 @@ export default function VariantsPage() {
 
         <div className="flex items-center justify-between pt-1">
           {/* Dry-run toggle */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               id="dry-run-toggle"
               type="checkbox"
               checked={dryRun}
               onChange={(e) => setDryRun(e.target.checked)}
               className="accent-[var(--accent)] w-4 h-4"
-            />
-            <span className="text-sm text-[var(--foreground-muted)]">Dry-run (simulate only)</span>
-          </label>
+              />
+              <span className="text-sm text-[var(--foreground-muted)]">اجرای آزمایشی (فقط شبیه‌سازی)</span>
+            </label>
           <button
             id="run-variants-btn"
             onClick={handleRun}
             disabled={running}
             className="btn-primary"
           >
-            {running ? 'Running…' : dryRun ? '▶ Simulate' : '▶ Run Creation'}
+            {running ? 'در حال اجرا…' : dryRun ? '▶ شبیه‌سازی' : '▶ اجرای ایجاد تنوع'}
           </button>
         </div>
       </div>
@@ -155,7 +166,7 @@ export default function VariantsPage() {
       {total > 0 && (
         <div className="glass-card p-5 space-y-3">
           <div className="flex justify-between text-xs text-[var(--foreground-muted)]">
-            <span>{done} / {total} products processed</span>
+            <span>{done} / {total} محصول پردازش شد</span>
             <span>{pct}%</span>
           </div>
           <div className="h-2 rounded-full bg-[var(--surface-alt)] overflow-hidden">
@@ -176,10 +187,10 @@ export default function VariantsPage() {
         <div className="glass-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--border)]">
-              <tr className="text-left text-xs text-[var(--foreground-muted)] uppercase tracking-wider">
+              <tr className="text-right text-xs text-[var(--foreground-muted)] uppercase tracking-wider">
                 <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">محصول</th>
+                <th className="px-4 py-3">وضعیت</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -187,7 +198,7 @@ export default function VariantsPage() {
                 <tr key={row.index} className="hover:bg-[var(--surface-alt)]/40 transition-colors">
                   <td className="px-4 py-3 text-[var(--foreground-muted)]">{row.index + 1}</td>
                   <td className="px-4 py-3">{row.title}</td>
-                  <td className="px-4 py-3"><span className={chipClass(row.status)}>{row.status}</span></td>
+                  <td className="px-4 py-3"><span className={chipClass(row.status)}>{statusLabel(row.status)}</span></td>
                 </tr>
               ))}
             </tbody>

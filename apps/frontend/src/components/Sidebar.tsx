@@ -2,20 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from './ThemeProvider';
+import { normalizeThemePreference } from '@/lib/theme';
 
 const nav = [
-  { href: '/',          label: 'Dashboard',       icon: '⬛' },
-  { href: '/settings',  label: 'Settings',        icon: '⚙️' },
-  { href: '/uploader',  label: 'Product Uploader', icon: '📤' },
-  { href: '/variants',  label: 'Variant Creator',  icon: '🧩' },
-  { href: '/console',   label: 'Live Console',     icon: '📋' },
+  { href: '/', label: 'داشبورد', icon: '⬛' },
+  { href: '/settings', label: 'تنظیمات', icon: '⚙️' },
+  { href: '/uploader', label: 'آپلود محصولات', icon: '📤' },
+  { href: '/variants', label: 'ایجاد تنوع', icon: '🧩' },
+  { href: '/console', label: 'کنسول زنده', icon: '📋' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const theme = useTheme();
 
   return (
-    <aside className="w-60 flex-shrink-0 flex flex-col py-6 px-4 border-r border-[var(--border)] bg-[var(--surface)]">
+    <aside className="w-64 flex-shrink-0 flex flex-col py-6 px-4 border-l border-[var(--border)] bg-[var(--surface)]">
       {/* Logo */}
       <div className="mb-8 px-2">
         <div className="flex items-center gap-3">
@@ -25,7 +28,7 @@ export default function Sidebar() {
           </div>
           <div>
             <div className="font-semibold text-sm text-[var(--foreground)]">Digikala Auto</div>
-            <div className="text-[10px] text-[var(--foreground-muted)] uppercase tracking-widest">Automation Suite</div>
+            <div className="text-[10px] text-[var(--foreground-muted)] tracking-widest">مجموعه اتوماسیون</div>
           </div>
         </div>
         <div className="accent-line mt-4" />
@@ -53,8 +56,25 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto px-2 pt-4 border-t border-[var(--border)]">
-        <p className="text-[10px] text-[var(--foreground-muted)] text-center">v1.0.0 · Electron + Next.js</p>
+      <div className="mt-auto px-2 pt-4 border-t border-[var(--border)] space-y-3">
+        <div>
+          <label htmlFor="theme-select" className="text-xs text-[var(--foreground-muted)]">
+            تم رابط کاربری
+          </label>
+          <select
+            id="theme-select"
+            value={theme.preference}
+            onChange={(event) => theme.setPreference(normalizeThemePreference(event.target.value))}
+            className="w-full mt-1 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2.5 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="system">سیستم</option>
+            <option value="light">روشن</option>
+            <option value="dark">تیره</option>
+          </select>
+        </div>
+        <p className="text-[10px] text-[var(--foreground-muted)] text-center">
+          v1.0.0 · Electron + Next.js · {theme.resolvedTheme === 'dark' ? 'نمای تیره' : 'نمای روشن'}
+        </p>
       </div>
     </aside>
   );

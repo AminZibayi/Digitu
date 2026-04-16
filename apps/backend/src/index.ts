@@ -6,6 +6,7 @@ import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStat
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
+import { ApiError, toApiErrorPayload } from './apiError';
 import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreationRequest } from './requestValidation';
 
 const app = express();
@@ -39,7 +40,11 @@ const buildClient = (cfg: DigikalaSettings): DigikalaClient =>
 
 const getServices = (): { uploader: ProductUploaderService; creator: VariantCreatorService } => {
   if (!settings) {
-    throw new Error('Digikala settings are not configured. Open Settings and save credentials first.');
+    throw new ApiError(
+      'SETTINGS_NOT_CONFIGURED',
+      'Digikala settings are not configured. Open Settings and save credentials first.',
+      400,
+    );
   }
   const client = buildClient(settings);
   return {
@@ -97,9 +102,12 @@ app.get('/api/stats', (_req, res) => {
     const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
     res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to load stats';
-    logger.error('Failed to load stats', { error: message });
-    res.status(500).json({ success: false, error: message });
+    const payload = toApiErrorPayload(error, 'STATS_LOAD_FAILED', 'Failed to load stats', 500);
+    logger.error('Failed to load stats', { code: payload.code, error: payload.message });
+    res.status(payload.status).json({
+      success: false,
+      error: { code: payload.code, message: payload.message },
+    });
   }
 });
 
@@ -110,9 +118,12 @@ app.post('/api/settings', (req, res) => {
     logger.info('Digikala settings saved');
     res.json({ success: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to save settings';
-    logger.error('Failed to save settings', { error: message });
-    res.status(400).json({ success: false, error: message });
+    const payload = toApiErrorPayload(error, 'SETTINGS_SAVE_FAILED', 'Failed to save settings', 400);
+    logger.error('Failed to save settings', { code: payload.code, error: payload.message });
+    res.status(payload.status).json({
+      success: false,
+      error: { code: payload.code, message: payload.message },
+    });
   }
 });
 
@@ -129,9 +140,12 @@ app.post('/api/upload', async (req, res) => {
     );
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Upload failed';
-    logger.error('Upload completely failed', { error: message });
-    res.status(500).json({ success: false, error: message });
+    const payload = toApiErrorPayload(error, 'UPLOAD_FAILED', 'Upload failed', 500);
+    logger.error('Upload completely failed', { code: payload.code, error: payload.message });
+    res.status(payload.status).json({
+      success: false,
+      error: { code: payload.code, message: payload.message },
+    });
   }
 });
 
@@ -150,9 +164,12 @@ app.post('/api/variant-creation', async (req, res) => {
     );
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Variant creation failed';
-    logger.error('Variant creation completely failed', { error: message });
-    res.status(500).json({ success: false, error: message });
+    const payload = toApiErrorPayload(error, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
+    logger.error('Variant creation completely failed', { code: payload.code, error: payload.message });
+    res.status(payload.status).json({
+      success: false,
+      error: { code: payload.code, message: payload.message },
+    });
   }
 });
 

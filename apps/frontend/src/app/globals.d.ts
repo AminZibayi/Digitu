@@ -21,7 +21,12 @@ declare global {
 export interface IpcHandlerResult {
   success: boolean;
   results?: unknown[];
-  error?: string;
+  error?: string | ApiErrorResponse;
+}
+
+export interface ApiErrorResponse {
+  code?: string;
+  message?: string;
 }
 
 export interface LogEntry {

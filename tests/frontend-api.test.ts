@@ -27,4 +27,44 @@ describe('frontend api transport', () => {
     expect(getStats).toHaveBeenCalledTimes(1);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it('throws typed error details from http error envelope', async () => {
+    vi.stubGlobal('window', {} as Window);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        success: false,
+        error: { code: 'INVALID_REQUEST', message: 'csvPath is required' },
+      }),
+    }));
+
+    vi.resetModules();
+    const { api } = await import('../apps/frontend/src/lib/api');
+
+    await expect(api.runUpload('')).rejects.toMatchObject({
+      code: 'INVALID_REQUEST',
+      message: 'csvPath is required',
+    });
+  });
+
+  it('keeps backend english message for unknown code', async () => {
+    vi.stubGlobal('window', {} as Window);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({
+        success: false,
+        error: { code: 'UNKNOWN_FUTURE_CODE', message: 'Future backend error text' },
+      }),
+    }));
+
+    vi.resetModules();
+    const { api } = await import('../apps/frontend/src/lib/api');
+
+    await expect(api.getStats()).rejects.toMatchObject({
+      code: 'UNKNOWN_FUTURE_CODE',
+      message: 'Future backend error text',
+    });
+  });
 });

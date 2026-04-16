@@ -5,6 +5,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  --background: #f6f7fb;
+  --surface: #ffffff;
+  --surface-alt: #eef1f8;
+  --border: rgba(15, 23, 42, 0.12);
+  --accent: #ef394e;
+  --accent-glow: rgba(239, 57, 78, 0.18);
+  --accent-secondary: #7c5cbf;
+  --foreground: #1f2937;
+  --foreground-muted: #667085;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+[data-theme="dark"] {
   --background: #0f0f13;
   --surface: #1a1a24;
   --surface-alt: #22223a;
@@ -14,9 +29,6 @@
   --accent-secondary: #7c5cbf;
   --foreground: #f0f0f5;
   --foreground-muted: #8888a0;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
 }
 
 * {
@@ -42,7 +54,7 @@ html, body {
 
 /* Glass card primitive */
 .glass-card {
-  background: rgba(26, 26, 36, 0.7);
+  background: var(--surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -79,7 +91,7 @@ html, body {
 .btn-ghost {
   @apply flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200;
   color: var(--foreground-muted);
-  background: transparent;
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 .btn-ghost:hover { background: var(--surface-alt); color: var(--foreground); }

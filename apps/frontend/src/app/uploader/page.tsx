@@ -2,13 +2,20 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { IpcProgressEvent } from '../globals.d';
-import { api } from '../../lib/api';
+import { ApiRequestError, api } from '../../lib/api';
+import { resolvePersianErrorMessage } from '../../lib/errorDictionary';
 
 interface RowStatus {
   index: number;
   title: string;
   status: string;
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  success: 'موفق',
+  failed: 'ناموفق',
+  processing: 'در حال پردازش',
+};
 
 export default function UploaderPage() {
   const [csvPath, setCsvPath]         = useState('');
@@ -42,7 +49,7 @@ export default function UploaderPage() {
 
   const handleRun = useCallback(async () => {
     if (!csvPath.trim()) {
-      setInputError('Please provide a CSV file path.');
+      setInputError('مسیر فایل CSV را وارد کنید.');
       return;
     }
     setInputError(null);
@@ -52,11 +59,13 @@ export default function UploaderPage() {
     try {
       const res = await api.runUpload(csvPath);
       setResult(res.success
-        ? `✅ Completed: ${res.results?.filter((r: any) => r.status === 'success').length} succeeded.`
-        : `❌ Error: ${res.error}`);
+        ? `✅ تکمیل شد: ${res.results?.filter((r: any) => r.status === 'success').length ?? 0} مورد موفق.`
+        : `❌ خطا: ${typeof res.error === 'string' ? res.error : res.error?.message ?? 'Upload failed'}`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Upload failed';
-      setResult(`❌ Error: ${message}`);
+      const message = error instanceof ApiRequestError
+        ? resolvePersianErrorMessage(error.code, error.message)
+        : (error instanceof Error ? error.message : 'آپلود ناموفق بود');
+      setResult(`❌ خطا: ${message}`);
     } finally {
       setRunning(false);
     }
@@ -77,15 +86,15 @@ export default function UploaderPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Product Uploader</h1>
+        <h1 className="text-2xl font-bold">آپلود محصولات</h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          Upload products in bulk from a CSV file. Track real-time progress below.
+          محصولات را به‌صورت گروهی از فایل CSV آپلود کنید و پیشرفت را لحظه‌ای ببینید.
         </p>
       </div>
 
       {/* Input */}
       <div className="glass-card p-5 space-y-4">
-        <label className="text-sm font-medium text-[var(--foreground-muted)]">CSV File Path</label>
+        <label className="text-sm font-medium text-[var(--foreground-muted)]">مسیر فایل CSV</label>
         <div className="flex gap-3">
           <input
             id="csv-path"
@@ -100,7 +109,7 @@ export default function UploaderPage() {
             onClick={handleBrowse}
             className="btn-ghost"
           >
-            Browse
+            انتخاب فایل
           </button>
           <button
             id="run-upload-btn"
@@ -108,7 +117,7 @@ export default function UploaderPage() {
             disabled={running || !csvPath.trim()}
             className="btn-primary"
           >
-            {running ? 'Running…' : 'Run Upload'}
+            {running ? 'در حال اجرا…' : 'شروع آپلود'}
           </button>
         </div>
         {inputError && <p className="text-xs text-red-400">{inputError}</p>}
@@ -118,7 +127,7 @@ export default function UploaderPage() {
       {total > 0 && (
         <div className="glass-card p-5 space-y-3">
           <div className="flex justify-between text-xs text-[var(--foreground-muted)]">
-            <span>{done} / {total} rows processed</span>
+            <span>{done} / {total} ردیف پردازش شد</span>
             <span>{pct}%</span>
           </div>
           <div className="h-2 rounded-full bg-[var(--surface-alt)] overflow-hidden">
@@ -142,10 +151,10 @@ export default function UploaderPage() {
         <div className="glass-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--border)]">
-              <tr className="text-left text-xs text-[var(--foreground-muted)] uppercase tracking-wider">
+              <tr className="text-right text-xs text-[var(--foreground-muted)] uppercase tracking-wider">
                 <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">محصول</th>
+                <th className="px-4 py-3">وضعیت</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -154,7 +163,7 @@ export default function UploaderPage() {
                   <td className="px-4 py-3 text-[var(--foreground-muted)]">{row.index + 1}</td>
                   <td className="px-4 py-3 text-[var(--foreground)]">{row.title}</td>
                   <td className="px-4 py-3">
-                    <span className={chipClass(row.status)}>{row.status}</span>
+                    <span className={chipClass(row.status)}>{STATUS_LABELS[row.status] ?? row.status}</span>
                   </td>
                 </tr>
               ))}
