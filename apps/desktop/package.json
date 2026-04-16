@@ -26,17 +26,12 @@
   "build": {
     "appId": "com.digikala.automation",
     "productName": "Digikala Automation Suite",
-    "asar": true,
-    "asarUnpack": [
-      "**/*.node"
-    ],
+    "asar": false,
     "directories": {
       "output": "release"
     },
     "files": [
-      "dist/**/*",
-      "node_modules/**/*",
-      "!node_modules/.cache"
+      "dist/**/*"
     ],
     "extraResources": [
       {

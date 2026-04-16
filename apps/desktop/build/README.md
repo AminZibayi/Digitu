@@ -14,9 +14,9 @@ This runs TypeScript compilation and packages a directory build via `electron-bu
 - If valid signing credentials are configured for `electron-builder`, the generated `.exe` is signed.
 - If no signing credentials are present, packaging still succeeds and artifacts are generated unsigned.
 
-## Native module troubleshooting
+## Native module and workspace dependency note
 
-- Native binaries (such as `better-sqlite3`) are unpacked with `asarUnpack: ["**/*.node"]`.
+- `asar` is intentionally disabled for now because desktop dependencies are installed as pnpm workspace junctions (`workspace:*`) that resolve outside `apps/desktop`, and `electron-builder` fails directory packaging with `asar: true` in this layout.
 - If runtime errors mention missing native bindings, reinstall dependencies from repo root:
   - `pnpm install`
 - Re-run packaging after dependency changes:
