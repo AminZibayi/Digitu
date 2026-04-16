@@ -37,6 +37,9 @@ const CONFIG = {
   delayBetweenProducts: 2000,
   // Milliseconds between each step within a product
   delayBetweenSteps: 600,
+  // Retry settings for transient request failures
+  maxRetries: 3,
+  retryDelayMs: 800,
 };
 
 // ────────────────────────────────────────────────────────────
@@ -146,6 +149,55 @@ const ATTR = {
 // ────────────────────────────────────────────────────────────
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function isTooManyRequestsResponse(statusCode, bodyText) {
+  return statusCode === 429 || /too many requests/i.test(String(bodyText || ""));
+}
+
+function shouldRetryRequest(error, attempt) {
+  if (attempt >= CONFIG.maxRetries) return false;
+  if (error && typeof error.statusCode === "number") {
+    if (isTooManyRequestsResponse(error.statusCode, error.bodyText)) return false;
+    return error.statusCode >= 500;
+  }
+  return true;
+}
+
+async function fetchWithRetry(url, buildOptions, context) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= CONFIG.maxRetries; attempt += 1) {
+    try {
+      const response = await fetch(url, buildOptions());
+      const text = await response.text();
+
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}: ${text.slice(0, 300)}`);
+        error.statusCode = response.status;
+        error.bodyText = text;
+
+        if (isTooManyRequestsResponse(response.status, text) || attempt >= CONFIG.maxRetries || response.status < 500) {
+          throw error;
+        }
+
+        lastError = error;
+        await sleep(CONFIG.retryDelayMs * (attempt + 1));
+        continue;
+      }
+
+      return text;
+    } catch (error) {
+      if (!shouldRetryRequest(error, attempt)) {
+        throw error;
+      }
+
+      lastError = error;
+      await sleep(CONFIG.retryDelayMs * (attempt + 1));
+    }
+  }
+
+  throw lastError || new Error(`Request failed after retries for ${context.method} ${context.endpoint}`);
+}
+
 function parseBoolean(value, defaultValue = false) {
   if (typeof value === "boolean") return value;
   if (value === undefined || value === null || value === "") return defaultValue;
@@ -200,12 +252,15 @@ function baseHeaders(extra = {}) {
 
 async function apiCall(method, endpoint, body = null) {
   const url = `${CONFIG.baseUrl}${endpoint}`;
-  const headers = baseHeaders(body ? { "content-type": "application/json" } : {});
-  const opts = { method, headers };
-  if (body) opts.body = JSON.stringify(body);
-
-  const res = await fetch(url, opts);
-  const text = await res.text();
+  const text = await fetchWithRetry(
+    url,
+    () => ({
+      method,
+      headers: baseHeaders(body ? { "content-type": "application/json" } : {}),
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+    { method, endpoint }
+  );
 
   let json;
   try {
@@ -320,16 +375,21 @@ async function uploadImage(imagePath, slot) {
   if (!fs.existsSync(imagePath)) {
     throw new Error(`Image not found: ${imagePath}`);
   }
-  const form = new FormData();
-  form.append("file", fs.createReadStream(imagePath), path.basename(imagePath));
-  form.append("slot", String(slot));
+  const text = await fetchWithRetry(
+    `${CONFIG.baseUrl}/product-creation/images/upload`,
+    () => {
+      const form = new FormData();
+      form.append("file", fs.createReadStream(imagePath), path.basename(imagePath));
+      form.append("slot", String(slot));
 
-  const res = await fetch(`${CONFIG.baseUrl}/product-creation/images/upload`, {
-    method: "POST",
-    headers: { ...baseHeaders(), ...form.getHeaders() },
-    body: form,
-  });
-  const text = await res.text();
+      return {
+        method: "POST",
+        headers: { ...baseHeaders(), ...form.getHeaders() },
+        body: form,
+      };
+    },
+    { method: "POST", endpoint: "/product-creation/images/upload" }
+  );
   let json;
   try {
     json = JSON.parse(text);

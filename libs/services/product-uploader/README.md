@@ -673,7 +673,7 @@ console.log('Response:', JSON.stringify(json, null, 2));
 | Image not found     | Check paths are relative to current directory           |
 | Painting type error | Use exact Persian text: تابلو / تابلو نوری / تابلو پازل |
 | CSV encoding        | Save as UTF-8 with BOM                                  |
-| Too many requests   | Increase delayBetweenProducts                           |
+| Too many requests   | Requests are not retried; increase delayBetweenProducts |
 | API 403 Forbidden   | Check PHPSESSID is valid                                |
 
 ### Enable Debug Mode
