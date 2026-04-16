@@ -1,10 +1,53 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '../lib/api';
+
+interface DashboardStats {
+  productsUploaded: number;
+  variantsCreated: number;
+  lastRunAt: string | null;
+}
+
+const initialStats: DashboardStats = {
+  productsUploaded: 0,
+  variantsCreated: 0,
+  lastRunAt: null,
+};
+
 export default function Dashboard() {
-  const stats = [
-    { label: 'Products Uploaded', value: '—', icon: '📦', color: '#ef394e' },
-    { label: 'Variants Created',  value: '—', icon: '🧩', color: '#7c5cbf' },
-    { label: 'Last Run',          value: 'Never', icon: '🕒', color: '#22c55e' },
-    { label: 'DB Status',         value: 'Healthy', icon: '🗄️', color: '#3b82f6' },
-  ];
+  const [statsData, setStatsData] = useState<DashboardStats>(initialStats);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getStats()
+      .then((stats) => {
+        if (!cancelled) {
+          setStatsData(stats);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : 'Failed to load stats';
+          setStatsError(message);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = useMemo(
+    () => [
+      { label: 'Products Uploaded', value: String(statsData.productsUploaded), icon: '📦', color: '#ef394e' },
+      { label: 'Variants Created', value: String(statsData.variantsCreated), icon: '🧩', color: '#7c5cbf' },
+      { label: 'Last Run', value: statsData.lastRunAt ? new Date(statsData.lastRunAt).toLocaleString() : 'Never', icon: '🕒', color: '#22c55e' },
+      { label: 'DB Status', value: statsError ? 'Unavailable' : 'Healthy', icon: '🗄️', color: '#3b82f6' },
+    ],
+    [statsData, statsError],
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">

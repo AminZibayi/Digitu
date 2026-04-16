@@ -1,19 +1,29 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'path';
-import { Database, DigikalaClient, DigikalaSettings, logger, normalizeDigikalaSettings } from '@digikala/core';
+import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, normalizeDigikalaSettings } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
+import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
+import { formatNativeModuleReadinessError } from './runtimeReadiness';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
-const db = new Database(dbPath);
+let db: Database | null = null;
 const settingsStore = new SettingsStore(settingsPath);
 let settings: DigikalaSettings | null = null;
 
 let mainWindow: BrowserWindow | null = null;
 
 app.whenReady().then(() => {
+    try {
+        db = new Database(dbPath);
+    } catch (error: unknown) {
+        dialog.showErrorBox('Startup Error', formatNativeModuleReadinessError(String(error)));
+        app.quit();
+        return;
+    }
+
     try {
         settings = settingsStore.load();
     } catch (error: unknown) {
@@ -64,6 +74,9 @@ app.whenReady().then(() => {
         if (!settings) {
             throw new Error('Digikala settings are not configured. Open Settings and save credentials first.');
         }
+        if (!db) {
+            throw new Error('Database is not initialized.');
+        }
         const client = buildClient(settings);
         return {
             uploader: new ProductUploaderService(client, db),
@@ -85,22 +98,24 @@ app.whenReady().then(() => {
             : { configured: false };
     });
 
-    ipcMain.handle('save-settings', async (_event, payload: Record<string, unknown>) => {
-        const mergedPayload: Record<string, unknown> = { ...(payload || {}) };
-        if (!mergedPayload.cookie && settings?.cookie) {
-            mergedPayload.cookie = settings.cookie;
+    ipcMain.handle('get-stats', async () => loadStatsPayload(dbPath));
+
+    ipcMain.handle('save-settings', async (_event, payload: unknown) => {
+        try {
+            const mergedPayload = parseSaveSettingsInput(payload, settings?.cookie ?? null);
+            settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
+            logger.info('Digikala settings saved');
+            return { success: true };
+        } catch (error: unknown) {
+            const failure = toIpcErrorEnvelope(error, 'Failed to save settings');
+            logger.error('Failed to save settings', { error: failure.error });
+            return failure;
         }
-        settings = settingsStore.save(normalizeDigikalaSettings(mergedPayload));
-        logger.info('Digikala settings saved');
-        return { success: true };
     });
 
-    ipcMain.handle('run-upload', async (event, csvPath: string) => {
+    ipcMain.handle('run-upload', async (event, csvPath: unknown) => {
         try {
-            const normalizedPath = String(csvPath ?? '').trim();
-            if (!normalizedPath) {
-                throw new Error('csvPath is required');
-            }
+            const normalizedPath = parseRunUploadInput(csvPath);
             logger.info('Received IPC: run-upload', { csvPath: normalizedPath });
             const services = getServices();
             const results = await services.uploader.runUpload(
@@ -117,20 +132,15 @@ app.whenReady().then(() => {
         }
     });
 
-    ipcMain.handle('run-variant-creation', async (event, products: any[], config: any, dryRun: boolean) => {
+    ipcMain.handle('run-variant-creation', async (event, products: unknown, config: unknown, dryRun: unknown) => {
         try {
-            if (!Array.isArray(products) || products.length === 0) {
-                throw new Error('products must be a non-empty array');
-            }
-            if (!config || typeof config !== 'object') {
-                throw new Error('config must be an object');
-            }
-            logger.info('Received IPC: run-variant-creation', { products: products.length, dryRun: Boolean(dryRun) });
+            const parsedInput = parseRunVariantCreationInput(products, config, dryRun);
+            logger.info('Received IPC: run-variant-creation', { products: parsedInput.products.length, dryRun: parsedInput.dryRun });
             const services = getServices();
             const results = await services.creator.runCreation(
-                products,
-                config,
-                dryRun,
+                parsedInput.products,
+                parsedInput.config,
+                parsedInput.dryRun,
                 (index, total, title, status) => {
                     event.sender.send('variant-progress', { index, total, title, status });
                 },
@@ -159,7 +169,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        db.close();
+        if (db) {
+            db.close();
+        }
         app.quit();
     }
 });

@@ -1,37 +1,30 @@
 {
   "name": "@digikala/desktop",
   "version": "1.0.0",
+  "description": "Digikala product and variant desktop automation suite",
+  "author": "Digikala Automation Team",
   "main": "dist/main.js",
   "scripts": {
-    "start": "electron dist/main.js",
-    "compile": "tsc",
-    "dev": "tsc && electron dist/main.js",
-    "package": "electron-builder --dir",
-    "build": "tsc && electron-builder --dir"
-  },
-  "dependencies": {
-    "@digikala/core": "workspace:*",
-    "@digikala/product-uploader": "workspace:*",
-    "@digikala/variant-creator": "workspace:*",
-    "better-sqlite3": "^12.9.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8",
-    "typescript": "^5.0.0"
+    "build": "tsc && electron-builder --win --dir",
+    "compile": "tsc && electron-builder --win",
+    "dev": "electron dist/main.js"
   },
   "build": {
-    "appId": "com.digikala.automation",
+    "appId": "com.digikala.auto",
     "productName": "Digikala Automation Suite",
-    "asar": false,
     "directories": {
       "output": "release"
     },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "asar": false,
     "files": [
-      "dist/**/*",
-      "node_modules/**/*",
-      "!node_modules/.cache"
+      "dist/**/*"
     ],
     "extraResources": [
       {
@@ -41,13 +34,17 @@
           "**/*"
         ]
       }
-    ],
-    "win": {
-      "target": "nsis"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    ]
+  },
+  "dependencies": {
+    "@digikala/core": "workspace:*",
+    "@digikala/product-uploader": "workspace:*",
+    "@digikala/variant-creator": "workspace:*",
+    "better-sqlite3": "^9.6.0"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.4.5"
   }
 }

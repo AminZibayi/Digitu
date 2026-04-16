@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { Database, DigikalaClient, DigikalaSettings, logger } from '@digikala/core';
+import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
@@ -90,6 +90,17 @@ app.get('/api/settings', (_req, res) => {
         }
       : { configured: false },
   });
+});
+
+app.get('/api/stats', (_req, res) => {
+  try {
+    const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
+    res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load stats';
+    logger.error('Failed to load stats', { error: message });
+    res.status(500).json({ success: false, error: message });
+  }
 });
 
 app.post('/api/settings', (req, res) => {
