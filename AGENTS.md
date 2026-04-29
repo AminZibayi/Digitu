@@ -9,6 +9,9 @@
 - You have access to the Nx MCP server and its tools, use them to help the user
 - For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
 - NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+- **Use atomic commits**: Every fix or feature gets its own commit. Never batch
+  unrelated changes into a single commit.
+- **Avoid npm and npx**: Use pnpm and pnpm alternatives for npx (dlx/exec).
 
 ## Scaffolding & Generators
 
@@ -19,6 +22,5 @@
 - USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
 - DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
-
 
 <!-- nx configuration end-->
