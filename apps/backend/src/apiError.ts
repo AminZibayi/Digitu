@@ -20,21 +20,25 @@ export interface ApiErrorPayload {
 
 export function toApiErrorPayload(
   error: unknown,
-  req: Request,
+  req: Request | null,
   fallbackCode: string,
   fallbackMessage: string,
   fallbackStatus: number,
 ): ApiErrorPayload {
   const err = error instanceof Error ? error : new Error(String(error));
   
-  logger.error({ 
-    err, 
-    req: { 
-      method: req.method, 
-      url: req.url, 
-      body: req.body 
-    } 
-  }, 'API Error');
+  if (req) {
+    logger.error({ 
+      err, 
+      req: { 
+        method: req.method, 
+        url: req.url, 
+        body: req.body 
+      } 
+    }, 'API Error');
+  } else {
+    logger.error({ err }, 'API Error');
+  }
 
   if (error instanceof ApiError) {
     return {

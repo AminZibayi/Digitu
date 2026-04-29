@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildStatsPayload, loadStatsPayload } from '../packages/core/src/stats';
+import { buildStatsPayload, loadStatsPayload } from '../libs/core/src/stats';
 
 describe('stats payload', () => {
   it('exports stats loader from core package entrypoint', async () => {
-    const core = await import('../packages/core/src');
+    const core = await import('../libs/core/src');
     expect(typeof core.loadStatsPayload).toBe('function');
   });
 

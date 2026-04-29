@@ -18,22 +18,22 @@ describe('requestValidation', () => {
   it('parses valid variant creation payload', () => {
     const parsed = parseVariantCreationRequest({
       dryRun: true,
-      products: [{ productId: 1, productTitle: 'A' }],
+      fixture: 'some-fixture-id',
       config: { themeId: 1, sizes: [{ key: '100x70', themeValueId: 2, price: 10000 }] },
     });
 
     expect(parsed.dryRun).toBe(true);
-    expect(parsed.products).toHaveLength(1);
+    expect(parsed.fixture).toBe('some-fixture-id');
   });
 
-  it('rejects variant creation payload with invalid products', () => {
+  it('rejects variant creation payload with invalid config', () => {
     expect(() =>
       parseVariantCreationRequest({
         dryRun: false,
-        products: [{ productId: 0, productTitle: '' }],
-        config: { themeId: 1, sizes: [{ key: '100x70', themeValueId: 2, price: 10000 }] },
+        fixture: 'some-fixture-id',
+        config: { themeId: 0, sizes: [] },
       }),
-    ).toThrow(/products/i);
+    ).toThrow(/config/i);
   });
 
   it('keeps existing cookie when payload cookie is empty', () => {
