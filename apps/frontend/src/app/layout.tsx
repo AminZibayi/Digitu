@@ -3,10 +3,12 @@ import './globals.css';
 import Sidebar from '@/components/Sidebar';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ClientErrorBoundary } from '@/components/ClientErrorBoundary';
+import { BRANDING } from '@digikala/branding';
 
 export const metadata: Metadata = {
-  title: '????????? ???',
-  description: '?????? ??????? ????? ????? ? ????? ????',
+  title: BRANDING.displayName,
+  description: BRANDING.description,
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

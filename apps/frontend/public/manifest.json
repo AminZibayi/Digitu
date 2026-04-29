@@ -1,0 +1,16 @@
+{
+  "name": "Digikala Automation Suite",
+  "short_name": "Digitu",
+  "description": "Digikala product and variant desktop automation suite",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4056",
+  "icons": [
+    {
+      "src": "/logo-dark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

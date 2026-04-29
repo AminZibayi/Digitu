@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from './ThemeProvider';
 import { normalizeThemePreference } from '@/lib/theme';
+import { BRANDING } from '@digikala/branding';
+import Image from 'next/image';
 
 const nav = [
   { href: '/', label: 'داشبورد', icon: '⬛' },
@@ -22,12 +24,17 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="mb-8 px-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm relative"
             style={{ background: 'var(--accent)' }}>
-            D
+            <Image 
+              src={theme.resolvedTheme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'} 
+              alt="Logo" 
+              fill
+              className="p-1.5"
+            />
           </div>
           <div>
-            <div className="font-semibold text-sm text-[var(--foreground)]">Digikala Auto</div>
+            <div className="font-semibold text-sm text-[var(--foreground)]">{BRANDING.shortName}</div>
             <div className="text-[10px] text-[var(--foreground-muted)] tracking-widest">مجموعه اتوماسیون</div>
           </div>
         </div>
