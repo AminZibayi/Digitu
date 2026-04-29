@@ -7,12 +7,15 @@
     "dev": "nx run-many -t dev",
     "build": "nx run-many -t build",
     "test": "vitest run",
-    "lint": "nx run-many -t lint"
+    "lint": "nx run-many -t lint",
+    "version": "standard-version",
+    "release": "standard-version && git push --follow-tags origin main"
   },
   "devDependencies": {
     "@nx/next": "22.7.1",
     "@nx/vitest": "22.7.1",
     "nx": "22.7.1",
+    "standard-version": "^9.5.0",
     "vitest": "^2.1.9"
   },
   "dependencies": {
