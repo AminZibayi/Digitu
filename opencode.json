@@ -10,6 +10,8 @@
   "permission": {
     "bash": {
       "*": "allow",
+      "websearch": "allow",
+      "question": "allow",
       "Stop-Process*": "ask",
       "Kill-Process*": "ask",
       "taskkill*": "ask",
