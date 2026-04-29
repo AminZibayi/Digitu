@@ -5,7 +5,7 @@
   "author": "Digikala Automation Team",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && electron-builder --win --dir",
+    "build": "tsc && electron-builder",
     "compile": "tsc && electron-builder --win",
     "dev": "electron dist/main.js"
   },
