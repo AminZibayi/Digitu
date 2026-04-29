@@ -18,6 +18,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "nx": "22.7.1"
   }
 }

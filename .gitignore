@@ -12,3 +12,8 @@ worktrees/
 .worktrees
 worktrees
 .playwright-mcp
+
+
+
+.nx/cache
+.nx/workspace-data
