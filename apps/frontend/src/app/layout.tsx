@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: BRANDING.displayName,
   description: BRANDING.description,
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon-192x192.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
