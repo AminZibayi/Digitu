@@ -2,6 +2,11 @@ import type { DigikalaSettingsInput } from '@digikala/core';
 
 type GenericRecord = Record<string, unknown>;
 
+export const IPC_CHANNELS = {
+  LOG_WRITE: 'log:write',
+} as const;
+
+
 export interface ParsedRunVariantCreationInput {
   products: Array<{ productId: number; productTitle: string }>;
   config: GenericRecord;

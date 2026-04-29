@@ -4,7 +4,7 @@ import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, n
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
-import { parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
+import { IPC_CHANNELS, parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
@@ -52,7 +52,7 @@ app.whenReady().then(() => {
         mainWindow.loadFile(frontendPath);
     }
 
-    logger.on('log', (entry) => {
+    logger.on('log', (entry: any) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('log-message', entry);
         }
@@ -164,6 +164,11 @@ app.whenReady().then(() => {
             return null;
         }
         return result.filePaths[0];
+    });
+
+    ipcMain.on(IPC_CHANNELS.LOG_WRITE, (_, { level, message, data }) => {
+        const logMethod = (logger as any)[level] || logger.info;
+        logMethod.call(logger, { source: 'desktop-renderer', ...data }, message);
     });
 });
 

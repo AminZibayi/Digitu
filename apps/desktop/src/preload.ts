@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { IPC_CHANNELS } from './ipcContracts';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     // Dashboard
@@ -33,4 +34,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     pickCsvPath: () => ipcRenderer.invoke('pick-csv-path'),
+
+    // Logging
+    log: (level: string, message: string, data?: any) => {
+        ipcRenderer.send(IPC_CHANNELS.LOG_WRITE, { level, message, data });
+    },
 });
