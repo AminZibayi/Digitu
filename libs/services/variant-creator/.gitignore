@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs and runtime artifacts
+logs/
+*.log
+
+# Generated run outputs
+output/
+
+# Test artifacts
+coverage/
+.vitest/
+
+# Package manager caches
+.pnpm-store/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
