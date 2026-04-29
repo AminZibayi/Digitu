@@ -4,6 +4,7 @@
   "private": true,
   "description": "Unified Digikala Product and Variant Automation Suite",
   "scripts": {
+    "web": "nx run-many -t dev --projects=backend,frontend",
     "dev": "nx run-many -t dev",
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
@@ -11,9 +12,22 @@
     "release": "nx release"
   },
   "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@nx/eslint": "22.7.1",
+    "@nx/eslint-plugin": "22.7.1",
+    "@nx/js": "^22.7.1",
     "@nx/next": "22.7.1",
     "@nx/vitest": "22.7.1",
+    "@swc-node/register": "~1.11.1",
+    "@swc/core": "~1.15.5",
+    "@swc/helpers": "~0.5.18",
+    "@types/node": "20.19.9",
+    "eslint": "^9.8.0",
+    "eslint-config-prettier": "^10.0.0",
     "nx": "22.7.1",
+    "prettier": "~3.6.2",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.40.0",
     "vitest": "^4.0.0"
   },
   "dependencies": {

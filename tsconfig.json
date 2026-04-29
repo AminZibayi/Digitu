@@ -2,11 +2,20 @@
   "extends": "./apps/frontend/tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "paths": {
+      "@digikala/branding": ["./libs/branding/src/index.ts"]
+    }
   },
   "references": [
-    { "path": "./apps/frontend" },
-    { "path": "./apps/backend" },
-    { "path": "./apps/desktop" }
+    {
+      "path": "./apps/frontend"
+    },
+    {
+      "path": "./apps/backend"
+    },
+    {
+      "path": "./apps/desktop"
+    }
   ]
 }
