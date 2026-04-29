@@ -13,7 +13,10 @@
     "declaration": false,
     "sourceMap": true,
     // Electron main process uses Node.js — no DOM types
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@digikala/branding": ["../../libs/branding/src/index.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

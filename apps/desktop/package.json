@@ -15,13 +15,14 @@
     ]
   },
   "build": {
-    "appId": "com.digikala.auto",
+    "appId": "com.digitu.auto",
     "productName": "Digikala Automation Suite",
     "directories": {
       "output": "release"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icon.svg"
     },
     "nsis": {
       "oneClick": false,

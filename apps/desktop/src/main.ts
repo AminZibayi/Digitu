@@ -6,6 +6,7 @@ import { VariantCreatorService } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
 import { IPC_CHANNELS, parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
+import { BRANDING } from '@digikala/branding';
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
@@ -36,6 +37,8 @@ app.whenReady().then(() => {
         height: 860,
         minWidth: 900,
         minHeight: 600,
+        title: BRANDING.displayName,
+        icon: path.join(__dirname, '../assets/icon.svg'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
