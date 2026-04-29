@@ -7,7 +7,7 @@ import pinoHttp from 'pino-http';
 import { WebSocket, WebSocketServer } from 'ws';
 import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
-import { VariantCreatorService } from '@digikala/variant-creator';
+import { VariantCreatorService, listFixtures, loadFixture, saveFixture, deleteFixture, parseCSVToFixture } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
 import { ApiError, toApiErrorPayload } from './apiError';
 import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreationRequest } from './requestValidation';
@@ -194,10 +194,41 @@ app.post('/api/upload', async (req, res) => {
   }
 });
 
-app.post('/api/variant-creation', async (req, res) => {
+const variantRouter = express.Router();
+const fixturesDir = path.join(process.cwd(), 'fixtures');
+if (!fs.existsSync(fixturesDir)) fs.mkdirSync(fixturesDir, { recursive: true });
+
+variantRouter.get('/fixtures', (req, res) => {
+  res.json({ fixtures: listFixtures(fixturesDir) });
+});
+
+variantRouter.post('/fixtures', (req, res) => {
+  const { name, content } = req.body;
+  saveFixture(fixturesDir, name, content);
+  res.json({ success: true });
+});
+
+variantRouter.delete('/fixtures/:name', (req, res) => {
+  deleteFixture(fixturesDir, req.params.name);
+  res.json({ success: true });
+});
+
+variantRouter.post('/fixtures/:name/upload-csv', express.text({ type: 'text/csv' }), (req, res) => {
+  const content = parseCSVToFixture(req.body);
+  saveFixture(fixturesDir, req.params.name, content);
+  res.json({ success: true, count: content.length });
+});
+
+variantRouter.post('/run', async (req, res) => {
   try {
-    const { products, config, dryRun } = parseVariantCreationRequest(req.body);
-    logger.info('Received HTTP: run-variant-creation', { products: products.length, dryRun });
+    const { fixture, config, dryRun } = parseVariantCreationRequest(req.body);
+    logger.info('Received HTTP: run-variant-creation', { fixture, dryRun });
+    const products = loadFixture(fixturesDir, fixture);
+    
+    if (!products || products.length === 0) {
+      throw new ApiError('INVALID_REQUEST', 'fixture must contain at least one product', 400);
+    }
+    
     const services = getServices();
     const results = await services.creator.runCreation(
       products,
@@ -216,6 +247,8 @@ app.post('/api/variant-creation', async (req, res) => {
     });
   }
 });
+
+app.use('/api/variants', variantRouter);
 
 const frontendOutPath = path.join(__dirname, '..', '..', 'frontend', 'out');
 app.use(express.static(frontendOutPath));

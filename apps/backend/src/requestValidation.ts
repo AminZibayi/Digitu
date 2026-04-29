@@ -8,7 +8,7 @@ export interface ParsedUploadRequest {
 }
 
 export interface ParsedVariantCreationRequest {
-  products: Array<{ productId: number; productTitle: string }>;
+  fixture: string;
   config: GenericRecord;
   dryRun: boolean;
 }
@@ -37,20 +37,8 @@ export function parseUploadRequest(body: unknown): ParsedUploadRequest {
 
 export function parseVariantCreationRequest(body: unknown): ParsedVariantCreationRequest {
   const payload = asRecord(body, 'request body');
-  const productsRaw = payload.products;
-  if (!Array.isArray(productsRaw) || productsRaw.length === 0) {
-    throw new ApiError('INVALID_REQUEST', 'products must be a non-empty array', 400);
-  }
-
-  const products = productsRaw.map((item, index) => {
-    const productRow = asRecord(item, `products[${index}]`);
-    const productId = Number(productRow.productId);
-    const productTitle = asNonEmptyString(productRow.productTitle, `products[${index}].productTitle`);
-    if (!Number.isInteger(productId) || productId <= 0) {
-      throw new ApiError('INVALID_REQUEST', `products[${index}].productId must be a positive integer`, 400);
-    }
-    return { productId, productTitle };
-  });
+  
+  const fixture = asNonEmptyString(payload.fixture, 'fixture');
 
   const config = asRecord(payload.config, 'config');
   const themeId = Number(config.themeId);
@@ -62,7 +50,7 @@ export function parseVariantCreationRequest(body: unknown): ParsedVariantCreatio
   }
 
   return {
-    products,
+    fixture,
     config,
     dryRun: Boolean(payload.dryRun),
   };
