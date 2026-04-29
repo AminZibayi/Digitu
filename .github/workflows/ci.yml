@@ -19,4 +19,6 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - run: pnpm install
-      - run: pnpm nx run-many -t lint test build
+      - name: Derive appropriate SHAs for help Nx calculate affected
+        uses: nrwl/nx-set-shas@v4
+      - run: pnpm nx affected -t lint test build

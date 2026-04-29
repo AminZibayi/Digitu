@@ -33,7 +33,7 @@ class ProductUploaderService {
         this.client = client;
         this.db = db;
     }
-    async runUpload(csvPath, onProgress) {
+    async runUpload(csvPath, autoPublish, onProgress) {
         if (!fs_1.default.existsSync(csvPath)) {
             throw new Error(`CSV File not found: ${csvPath}`);
         }
@@ -56,6 +56,11 @@ class ProductUploaderService {
                 const productId = await this.finalizeProduct(draftId, encryptedIds);
                 if (!productId) {
                     throw new Error('Product creation completed but no productId was returned.');
+                }
+                if (autoPublish) {
+                    core_1.logger.info(`Auto-publishing product ${productId}`);
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    await this.publishProduct(productId);
                 }
                 this.db.addProduct(productId, title, row.model, csvPath);
                 onProgress?.(i, parsedRows.length, title, 'success');
@@ -288,6 +293,19 @@ class ProductUploaderService {
             },
         });
         return response.data?.data?.product_id ?? response.data?.product_id ?? null;
+    }
+    async publishProduct(productId) {
+        try {
+            const res = await this.client.requestJson(`/product/publish/${productId}/`, {
+                method: 'POST',
+                body: {}
+            });
+            return res.status === 'ok';
+        }
+        catch (error) {
+            core_1.logger.error({ productId, error: error.message }, 'Failed to auto-publish product');
+            return false;
+        }
     }
 }
 exports.ProductUploaderService = ProductUploaderService;

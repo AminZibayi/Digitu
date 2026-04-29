@@ -3,7 +3,7 @@ export declare class ProductUploaderService {
     private client;
     private db;
     constructor(client: DigikalaClient, db: Database);
-    runUpload(csvPath: string, onProgress?: (index: number, total: number, productTitle: string, status: string) => void): Promise<{
+    runUpload(csvPath: string, autoPublish?: boolean, onProgress?: (index: number, total: number, productTitle: string, status: string) => void): Promise<{
         status: string;
         title: string;
         productId?: number;
@@ -18,4 +18,5 @@ export declare class ProductUploaderService {
     private uploadImage;
     private uploadImages;
     private finalizeProduct;
+    publishProduct(productId: number): Promise<boolean>;
 }

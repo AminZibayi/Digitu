@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // Uploader
-    runUpload: (csvPath: string) => ipcRenderer.invoke('run-upload', csvPath),
+    runUpload: (csvPath: string, autoPublish?: boolean) => ipcRenderer.invoke('run-upload', csvPath, autoPublish),
     onUploadProgress: (callback: (data: any) => void) => {
         const listener = (_event: unknown, data: any) => callback(data);
         ipcRenderer.on('upload-progress', listener);

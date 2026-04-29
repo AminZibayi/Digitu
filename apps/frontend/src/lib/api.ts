@@ -124,14 +124,14 @@ export const api = {
     }
   },
 
-  runUpload: async (csvPath: string) => {
+  runUpload: async (csvPath: string, autoPublish?: boolean) => {
     if (isElectron) {
-      return window.electronAPI!.runUpload(csvPath);
+      return window.electronAPI!.runUpload(csvPath, autoPublish);
     } else {
       return fetchJson<{ success: boolean; results?: unknown[]; error?: string }>('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csvPath }),
+        body: JSON.stringify({ csvPath, autoPublish }),
       });
     }
   },

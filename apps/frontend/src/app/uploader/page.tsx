@@ -19,6 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function UploaderPage() {
   const [csvPath, setCsvPath]         = useState('');
+  const [autoPublish, setAutoPublish] = useState(false);
   const [running, setRunning]         = useState(false);
   const [rows, setRows]               = useState<RowStatus[]>([]);
   const [result, setResult]           = useState<string | null>(null);
@@ -57,7 +58,7 @@ export default function UploaderPage() {
     setRows([]);
     setResult(null);
     try {
-      const res = await api.runUpload(csvPath);
+      const res = await api.runUpload(csvPath, autoPublish);
       setResult(res.success
         ? `✅ تکمیل شد: ${res.results?.filter((r: any) => r.status === 'success').length ?? 0} مورد موفق.`
         : `❌ خطا: ${typeof res.error === 'string' ? res.error : res.error?.message ?? 'Upload failed'}`);
@@ -119,6 +120,18 @@ export default function UploaderPage() {
           >
             {running ? 'در حال اجرا…' : 'شروع آپلود'}
           </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="auto-publish"
+            checked={autoPublish}
+            onChange={(e) => setAutoPublish(e.target.checked)}
+            className="rounded border-[var(--border)] bg-[var(--surface-alt)]"
+          />
+          <label htmlFor="auto-publish" className="text-sm text-[var(--foreground)] cursor-pointer">
+            انتشار خودکار پس از ایجاد پیش‌نویس
+          </label>
         </div>
         {inputError && <p className="text-xs text-red-400">{inputError}</p>}
       </div>

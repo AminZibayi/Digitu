@@ -113,13 +113,14 @@ app.whenReady().then(() => {
         }
     });
 
-    ipcMain.handle('run-upload', async (event, csvPath: unknown) => {
+    ipcMain.handle('run-upload', async (event, csvPath: unknown, autoPublish: unknown) => {
         try {
-            const normalizedPath = parseRunUploadInput(csvPath);
-            logger.info('Received IPC: run-upload', { csvPath: normalizedPath });
+            const { csvPath: normalizedPath, autoPublish: isAutoPublish } = parseRunUploadInput(csvPath, autoPublish);
+            logger.info('Received IPC: run-upload', { csvPath: normalizedPath, autoPublish: isAutoPublish });
             const services = getServices();
             const results = await services.uploader.runUpload(
                 normalizedPath,
+                isAutoPublish,
                 (index, total, title, status) => {
                     event.sender.send('upload-progress', { index, total, title, status });
                 },

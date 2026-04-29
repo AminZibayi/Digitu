@@ -175,11 +175,12 @@ app.post('/api/settings', (req, res) => {
 
 app.post('/api/upload', async (req, res) => {
   try {
-    const { csvPath } = parseUploadRequest(req.body);
-    logger.info('Received HTTP: run-upload', { csvPath });
+    const { csvPath, autoPublish } = parseUploadRequest(req.body);
+    logger.info('Received HTTP: run-upload', { csvPath, autoPublish });
     const services = getServices();
     const results = await services.uploader.runUpload(
       csvPath,
+      autoPublish,
       (index, total, title, status) => {
         broadcastSse('upload-progress', { index, total, title, status });
       }

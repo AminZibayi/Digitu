@@ -33,8 +33,11 @@ function asNonEmptyString(value: unknown, field: string): string {
   return normalized;
 }
 
-export function parseRunUploadInput(csvPath: unknown): string {
-  return asNonEmptyString(csvPath, 'csvPath');
+export function parseRunUploadInput(csvPath: unknown, autoPublishRaw?: unknown): { csvPath: string, autoPublish: boolean } {
+  return {
+    csvPath: asNonEmptyString(csvPath, 'csvPath'),
+    autoPublish: Boolean(autoPublishRaw),
+  };
 }
 
 export function parseSaveSettingsInput(payload: unknown, existingCookie: string | null): DigikalaSettingsInput {

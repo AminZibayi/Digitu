@@ -9,7 +9,7 @@ declare global {
       getSettings: () => Promise<DigikalaSettingsState>;
       saveSettings: (settings: DigikalaSettingsPayload) => Promise<IpcHandlerResult>;
       onLogMessage: (cb: (log: LogEntry) => void) => () => void;
-      runUpload: (csvPath: string) => Promise<IpcHandlerResult>;
+      runUpload: (csvPath: string, autoPublish?: boolean) => Promise<IpcHandlerResult>;
       onUploadProgress: (cb: (data: IpcProgressEvent) => void) => () => void;
       runVariantCreation: (products: VariantCreationProductsInput, config: VariantCreationConfigInput, dryRun: boolean) => Promise<IpcHandlerResult>;
       onVariantProgress: (cb: (data: IpcProgressEvent) => void) => () => void;
