@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import http from 'http';
+import pinoHttp from 'pino-http';
+import { WebSocket, WebSocketServer } from 'ws';
 import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
@@ -11,7 +14,41 @@ import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreatio
 
 const app = express();
 app.use(cors());
+app.use(pinoHttp({ 
+  logger,
+  autoLogging: {
+    ignore: (req) => req.url === '/api/events' || req.url === '/api/logs/stream'
+  }
+}));
 app.use(express.json({ limit: '50mb' }));
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+wss.on('connection', (ws) => {
+  const logHandler = (entry: any) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(entry));
+    }
+  };
+  
+  logger.on('log', logHandler);
+  
+  ws.on('close', () => {
+    logger.off('log', logHandler);
+  });
+});
+
+server.on('upgrade', (request, socket, head) => {
+  const { pathname } = new URL(request.url || '', `http://${request.headers.host}`);
+  if (pathname === '/api/logs/stream') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 const dbDir = path.join(process.cwd(), 'data');
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
@@ -97,18 +134,28 @@ app.get('/api/settings', (_req, res) => {
   });
 });
 
-app.get('/api/stats', (_req, res) => {
+app.get('/api/stats', (req, res) => {
   try {
     const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
     res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, 'STATS_LOAD_FAILED', 'Failed to load stats', 500);
-    logger.error('Failed to load stats', { code: payload.code, error: payload.message });
+    const payload = toApiErrorPayload(error, req, 'STATS_LOAD_FAILED', 'Failed to load stats', 500);
     res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
     });
   }
+});
+
+app.post('/api/log', (req, res) => {
+  const { level, message, data } = req.body;
+  const levelName = level || 'info';
+  if (logger[levelName] && typeof logger[levelName] === 'function') {
+    logger[levelName](data || {}, message);
+  } else {
+    logger.info(data || {}, message);
+  }
+  res.status(204).end();
 });
 
 app.post('/api/settings', (req, res) => {
@@ -118,8 +165,7 @@ app.post('/api/settings', (req, res) => {
     logger.info('Digikala settings saved');
     res.json({ success: true });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, 'SETTINGS_SAVE_FAILED', 'Failed to save settings', 400);
-    logger.error('Failed to save settings', { code: payload.code, error: payload.message });
+    const payload = toApiErrorPayload(error, req, 'SETTINGS_SAVE_FAILED', 'Failed to save settings', 400);
     res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
@@ -140,8 +186,7 @@ app.post('/api/upload', async (req, res) => {
     );
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, 'UPLOAD_FAILED', 'Upload failed', 500);
-    logger.error('Upload completely failed', { code: payload.code, error: payload.message });
+    const payload = toApiErrorPayload(error, req, 'UPLOAD_FAILED', 'Upload failed', 500);
     res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
@@ -164,8 +209,7 @@ app.post('/api/variant-creation', async (req, res) => {
     );
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
-    logger.error('Variant creation completely failed', { code: payload.code, error: payload.message });
+    const payload = toApiErrorPayload(error, req, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
     res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
@@ -177,7 +221,7 @@ const frontendOutPath = path.join(__dirname, '..', '..', 'frontend', 'out');
 app.use(express.static(frontendOutPath));
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   logger.info(`Backend listening on port ${PORT}`);
   logger.info(`Serving static files from ${frontendOutPath}`);
 });

@@ -1,3 +1,6 @@
+import { Request } from 'express';
+import { logger } from '@digikala/core';
+
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
@@ -17,10 +20,22 @@ export interface ApiErrorPayload {
 
 export function toApiErrorPayload(
   error: unknown,
+  req: Request,
   fallbackCode: string,
   fallbackMessage: string,
   fallbackStatus: number,
 ): ApiErrorPayload {
+  const err = error instanceof Error ? error : new Error(String(error));
+  
+  logger.error({ 
+    err, 
+    req: { 
+      method: req.method, 
+      url: req.url, 
+      body: req.body 
+    } 
+  }, 'API Error');
+
   if (error instanceof ApiError) {
     return {
       code: error.code,

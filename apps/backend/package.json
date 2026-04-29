@@ -11,14 +11,17 @@
     "@digikala/core": "workspace:*",
     "@digikala/product-uploader": "workspace:*",
     "@digikala/variant-creator": "workspace:*",
-    "express": "^4.19.2",
+    "better-sqlite3": "^12.9.0",
     "cors": "^2.8.5",
-    "better-sqlite3": "^12.9.0"
+    "express": "^4.19.2",
+    "pino-http": "^11.0.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.0.0",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.7.1",
     "typescript": "^5.0.0"
   }
