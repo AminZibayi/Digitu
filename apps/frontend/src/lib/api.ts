@@ -173,3 +173,26 @@ export const api = {
     return window.electronAPI!.pickCsvPath();
   },
 };
+
+export async function fetchFixtures() {
+  const res = await fetch('http://localhost:3001/api/variants/fixtures');
+  return res.json();
+}
+
+export async function runVariantFixture(fixture: string, config: any, dryRun: boolean) {
+  const res = await fetch('http://localhost:3001/api/variants/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fixture, config, dryRun })
+  });
+  return res.json();
+}
+
+export async function uploadCSVFixture(name: string, csvText: string) {
+  const res = await fetch(`http://localhost:3001/api/variants/fixtures/${name}/upload-csv`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/csv' },
+    body: csvText
+  });
+  return res.json();
+}
