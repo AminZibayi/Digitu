@@ -122,19 +122,18 @@ git commit -m "ci: add release workflow for automated github releases"
 ```json
 {
   "scripts": {
-    "version": "standard-version",
-    "release": "standard-version && git push --follow-tags origin main"
+    "release": "nx release"
   }
 }
 ```
 
-- [ ] **Step 2: Install standard-version**
-Run: `pnpm add -D standard-version`
+- [ ] **Step 2: Configure Nx Release in nx.json**
+Add `release` configuration to `nx.json`.
 
 - [ ] **Step 3: Commit**
 ```bash
-git add package.json pnpm-lock.yaml
-git commit -m "chore: add versioning and release scripts"
+git add package.json nx.json
+git commit -m "chore: implement nx native release strategy"
 ```
 
 ### Task 5: Final Verification and Documentation

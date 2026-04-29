@@ -24,5 +24,22 @@
         "watchDepsTargetName": "watch-deps"
       }
     }
-  ]
+  ],
+  "release": {
+    "version": {
+      "generatorOptions": {
+        "currentVersionResolver": "disk"
+      }
+    },
+    "changelog": {
+      "workspaceChangelog": {
+        "createRelease": "github"
+      }
+    },
+    "git": {
+      "commit": true,
+      "tag": true
+    },
+    "conventionalCommits": true
+  }
 }

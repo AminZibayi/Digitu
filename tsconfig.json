@@ -1,0 +1,12 @@
+{
+  "extends": "./apps/frontend/tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "incremental": true
+  },
+  "references": [
+    { "path": "./apps/frontend" },
+    { "path": "./apps/backend" },
+    { "path": "./apps/desktop" }
+  ]
+}
