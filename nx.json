@@ -3,7 +3,9 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "test": {
       "cache": true
@@ -42,5 +44,6 @@
       "tag": true
     },
     "conventionalCommits": true
-  }
+  },
+  "analytics": false
 }
