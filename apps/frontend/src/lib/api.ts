@@ -70,6 +70,22 @@ function toErrorPayload(error: unknown, status: number): { code: string; message
   };
 }
 
+export async function reportLog(level: string, message: string, data?: any) {
+  try {
+    if (typeof window !== 'undefined' && (window as any).electron) {
+      (window as any).electron.log(level, message, data);
+      return;
+    }
+    await fetch('http://localhost:3001/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level, message, data, source: 'frontend' })
+    });
+  } catch (e) {
+    console.error('Failed to report log', e);
+  }
+}
+
 export const api = {
   getStats: async () => {
     if (isElectron) {
