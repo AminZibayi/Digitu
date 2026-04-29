@@ -4,21 +4,20 @@
   "private": true,
   "description": "Unified Digikala Product and Variant Automation Suite",
   "scripts": {
-    "dev": "pnpm --filter @digikala/frontend dev",
-    "build:core": "pnpm --filter @digikala/core build",
-    "build:services": "pnpm --filter @digikala/product-uploader build && pnpm --filter @digikala/variant-creator build",
-    "build:frontend": "pnpm --filter @digikala/frontend build",
-    "build:backend": "pnpm --filter @digikala/backend build",
-    "build:desktop": "pnpm --filter @digikala/desktop build",
-    "build:packages": "pnpm run build:core && pnpm run build:services",
-    "build": "pnpm run build:packages && pnpm run build:frontend && pnpm run build:desktop && pnpm run build:backend",
-    "backend:start": "pnpm --filter @digikala/backend start",
-    "desktop:dev": "pnpm --filter @digikala/desktop dev",
-    "desktop:compile": "pnpm --filter @digikala/desktop compile",
-    "test": "vitest run"
+    "dev": "nx run-many -t dev",
+    "build": "nx run-many -t build",
+    "test": "vitest run",
+    "lint": "nx run-many -t lint"
   },
   "devDependencies": {
-    "vitest": "^2.1.9",
-    "nx": "22.7.1"
+    "@nx/next": "22.7.1",
+    "@nx/vitest": "22.7.1",
+    "nx": "22.7.1",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "next": "~14.2.26",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

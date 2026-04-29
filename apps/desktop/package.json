@@ -9,6 +9,9 @@
     "compile": "tsc && electron-builder --win",
     "dev": "electron dist/main.js"
   },
+  "nx": {
+    "implicitDependencies": ["@digikala/frontend"]
+  },
   "build": {
     "appId": "com.digikala.auto",
     "productName": "Digikala Automation Suite",

@@ -19,3 +19,7 @@ worktrees
 .nx/workspace-data
 .nx/polygraph
 .claude/settings.local.json
+
+# Next.js
+.next
+out
