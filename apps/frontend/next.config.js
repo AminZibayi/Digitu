@@ -7,7 +7,7 @@ const nextConfig = {
   trailingSlash: true,
   // Keep relative assets for exported production builds (Electron file://),
   // but use default absolute assets in dev so nested routes don't request /<route>/_next/*
-  assetPrefix: isDev ? undefined : './',
+  assetPrefix: isDev ? undefined : '',
   images: {
     unoptimized: true,
   },

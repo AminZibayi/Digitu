@@ -19,4 +19,4 @@ fetch("https://seller.digikala.com/api/v2/product-edit/21602021/publish", {
   mode: "cors",
   credentials: "include",
 });
-var result = { status: "ok", data: { isValid: true } };
+const result = { status: "ok", data: { isValid: true } };
