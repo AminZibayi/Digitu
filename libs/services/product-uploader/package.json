@@ -1,0 +1,19 @@
+{
+  "name": "@digikala/product-uploader",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@digikala/core": "workspace:*",
+    "csv-parse": "^5.5.0",
+    "form-data": "^4.0.0",
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
