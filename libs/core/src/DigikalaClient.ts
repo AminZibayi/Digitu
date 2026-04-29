@@ -87,7 +87,7 @@ export class DigikalaClient {
         bodyText = await response.text();
       } catch (error: any) {
         if (attempt <= this.maxRetries) {
-          logger.warn('API request network error, retrying', { method: options.method, path, attempt, error: error.message });
+          logger.warn({ method: options.method, path, attempt, error: error.message }, 'API request network error, retrying');
           await this.sleep(this.retryDelayMs * attempt);
           continue;
         }
@@ -96,7 +96,7 @@ export class DigikalaClient {
 
       if (!response.ok) {
         if (attempt <= this.maxRetries && response.status >= 500 && !this.isTooManyRequests(response.status, bodyText)) {
-          logger.warn('API request remote error 5xx, retrying', { method: options.method, path, status: response.status, attempt });
+          logger.warn({ method: options.method, path, status: response.status, attempt }, 'API request remote error 5xx, retrying');
           await this.sleep(this.retryDelayMs * attempt);
           continue;
         }
@@ -115,7 +115,7 @@ export class DigikalaClient {
         // If it was our forced error from previous block, rethrow as is
         if (error.message.startsWith('Application Error')) throw error;
         
-        logger.error('API response parse error', { method: options.method, path, error: error.message });
+        logger.error({ method: options.method, path, error: error.message }, 'API response parse error');
         throw new Error(`Invalid JSON for ${options.method} ${path}: ${error.message}`);
       }
     }
