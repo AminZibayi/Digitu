@@ -61,7 +61,7 @@ function broadcastSse(event: string, data: unknown) {
   });
 }
 
-logger.on('log', (entry) => {
+logger.on('log', (entry: any) => {
   broadcastSse('log-message', entry);
 });
 

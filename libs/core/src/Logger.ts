@@ -1,13 +1,9 @@
+import pino, { Logger as PinoLogger } from 'pino';
+import fs from 'fs';
+import path from 'path';
 import { EventEmitter } from 'events';
 
-export const LOG_LEVELS = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  debug: 3,
-};
-
-export type LogLevelName = keyof typeof LOG_LEVELS;
+export type LogLevelName = 'error' | 'warn' | 'info' | 'debug' | 'fatal' | 'trace';
 
 export interface LogEntry {
   timestamp: string;
@@ -16,59 +12,98 @@ export interface LogEntry {
   data?: Record<string, any>;
 }
 
-export class Logger extends EventEmitter {
-  private level: number;
-
-  constructor(options: { level?: LogLevelName } = {}) {
-    super();
-    this.level = LOG_LEVELS[options.level || 'info'];
-  }
-
-  getTimestamp(): string {
-    const now = new Date();
-    return now.toISOString();
-  }
-
-  private emitLog(levelName: LogLevelName, message: string, data?: Record<string, any>) {
-    const levelNum = LOG_LEVELS[levelName] ?? LOG_LEVELS.info;
-    if (levelNum > this.level) {
-      return;
-    }
-
-    const entry: LogEntry = {
-      timestamp: this.getTimestamp(),
-      level: levelName,
-      message,
-      data
-    };
-
-    // Emit event which Electron ipcMain will intercept
-    this.emit('log', entry);
-
-    // Also console log in development/backend
-    const consoleMethod = levelName === 'error' ? 'error' : levelName === 'warn' ? 'warn' : 'log';
-    
-    // Formatting JSON for backend console
-    const formatted = `[${entry.timestamp}] [${entry.level.toUpperCase().padEnd(5)}] ${entry.message} ${entry.data ? JSON.stringify(entry.data) : ''}`;
-    console[consoleMethod](formatted);
-  }
-
-  error(message: string, data?: Record<string, any>) {
-    this.emitLog('error', message, data);
-  }
-
-  warn(message: string, data?: Record<string, any>) {
-    this.emitLog('warn', message, data);
-  }
-
-  info(message: string, data?: Record<string, any>) {
-    this.emitLog('info', message, data);
-  }
-
-  debug(message: string, data?: Record<string, any>) {
-    this.emitLog('debug', message, data);
-  }
+const logDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
-// Global logger instance for shared package reuse
-export const logger = new Logger();
+const logFile = path.join(logDir, `digikala-auto-${new Date().toISOString().split('T')[0]}.log`);
+
+const transport = pino.transport({
+  targets: [
+    {
+      target: 'pino/file',
+      options: { destination: logFile, mkdir: true },
+      level: process.env.LOG_LEVEL || 'info',
+    },
+    ...(process.env.NODE_ENV === 'development'
+      ? [{ target: 'pino-pretty', options: { colorize: true }, level: 'debug' }]
+      : []),
+  ],
+});
+
+const baseLogger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  redact: {
+    paths: ['*.cookie', '*.authorization', '*.token', '*.password', 'req.headers.cookie', 'res.headers.set-cookie'],
+    censor: '[Redacted]',
+  },
+}, transport);
+
+const emitter = new EventEmitter();
+
+function createWrappedLogger(pinoInstance: PinoLogger): any {
+  const handler: ProxyHandler<PinoLogger> = {
+    get(target, prop) {
+      if (prop === 'on' || prop === 'once' || prop === 'off' || prop === 'removeListener' || prop === 'removeAllListeners') {
+        const method = (emitter as any)[prop];
+        return method.bind(emitter);
+      }
+      
+      const value = (target as any)[prop];
+      if (typeof value === 'function' && ['info', 'error', 'warn', 'debug', 'fatal', 'trace'].includes(prop as string)) {
+        return (msgOrObj: any, maybeData?: any) => {
+          let finalData = maybeData;
+          let finalMsg = msgOrObj;
+
+          if (typeof msgOrObj === 'string' && typeof maybeData === 'object' && maybeData !== null) {
+            value.call(target, maybeData, msgOrObj);
+            finalData = maybeData;
+            finalMsg = msgOrObj;
+          } else {
+            value.call(target, msgOrObj, maybeData);
+            if (typeof msgOrObj === 'object') {
+              finalData = msgOrObj;
+              finalMsg = maybeData;
+            } else {
+              finalData = maybeData;
+              finalMsg = msgOrObj;
+            }
+          }
+
+          emitter.emit('log', {
+            timestamp: new Date().toISOString(),
+            level: (prop === 'warn' ? 'warn' : prop) as LogLevelName,
+            message: finalMsg,
+            data: finalData
+          });
+        };
+      }
+      
+      if (prop === 'child') {
+        return (bindings: any) => createWrappedLogger(target.child(bindings));
+      }
+
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  };
+
+  return new Proxy(pinoInstance, handler);
+}
+
+export const logger: any = createWrappedLogger(baseLogger);
+
+export function createLogger(component: string): any {
+  return logger.child({ component });
+}
+
+if (typeof process !== 'undefined') {
+  process.on('uncaughtException', (err) => {
+    logger.fatal({ err }, 'Uncaught Exception');
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (reason) => {
+    logger.fatal({ reason }, 'Unhandled Rejection');
+    process.exit(1);
+  });
+}
