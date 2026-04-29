@@ -17,3 +17,5 @@ worktrees
 
 .nx/cache
 .nx/workspace-data
+.nx/polygraph
+.claude/settings.local.json
