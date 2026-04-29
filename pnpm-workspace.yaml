@@ -1,6 +1,6 @@
 packages:
-  - packages/*
-  - packages/services/*
+  - libs/*
+  - libs/services/*
   - apps/*
 
 onlyBuiltDependencies:
