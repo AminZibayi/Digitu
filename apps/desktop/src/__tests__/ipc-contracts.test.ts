@@ -4,7 +4,7 @@ import {
   parseRunVariantCreationInput,
   parseSaveSettingsInput,
   toIpcErrorEnvelope,
-} from '../apps/desktop/src/ipcContracts';
+} from '../ipcContracts';
 
 describe('ipc contracts', () => {
   it('rejects empty csv path', () => {

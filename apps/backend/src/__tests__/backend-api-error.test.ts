@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, toApiErrorPayload } from '../apps/backend/src/apiError';
+import { ApiError, toApiErrorPayload } from '../apiError';
 
 describe('api error helper', () => {
   it('preserves code, message, and status from ApiError', () => {

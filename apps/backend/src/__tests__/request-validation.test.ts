@@ -3,7 +3,7 @@ import {
   buildNormalizedSettingsPayload,
   parseUploadRequest,
   parseVariantCreationRequest,
-} from '../apps/backend/src/requestValidation';
+} from '../requestValidation';
 
 describe('requestValidation', () => {
   it('parses a valid upload request', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildStatsPayload, loadStatsPayload } from '../libs/core/src/stats';
+import { buildStatsPayload, loadStatsPayload } from '../stats';
 
 describe('stats payload', () => {
   it('exports stats loader from core package entrypoint', async () => {
-    const core = await import('../libs/core/src');
+    const core = await import('../');
     expect(typeof core.loadStatsPayload).toBe('function');
   });
 
@@ -18,7 +18,7 @@ describe('stats payload', () => {
     expect(result.lastRunAt).toBeTruthy();
   });
 
-  it('surfaces database failures instead of silently returning zero stats', () => {
-    expect(() => loadStatsPayload('Z:\\path\\that\\does\\not\\exist\\digikala-auto.sqlite')).toThrow();
+  it('surfaces database failures instead of silently returning zero stats', async () => {
+    await expect(loadStatsPayload('Z:\\path\\that\\does\\not\\exist\\digikala-auto.pglite')).rejects.toThrow();
   });
 });

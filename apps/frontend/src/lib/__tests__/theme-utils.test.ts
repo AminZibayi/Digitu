@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeThemePreference, resolveTheme } from '../apps/frontend/src/lib/theme';
+import { normalizeThemePreference, resolveTheme } from '../theme';
 
 describe('theme utils', () => {
   it('defaults invalid preference to system', () => {

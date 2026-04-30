@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatNativeModuleReadinessError } from '../apps/desktop/src/runtimeReadiness';
+import { formatNativeModuleReadinessError } from '../runtimeReadiness';
 
 describe('runtime readiness', () => {
   it('formats ABI mismatch with actionable message', () => {
