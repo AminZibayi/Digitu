@@ -12,7 +12,9 @@ worktrees/
 .worktrees
 worktrees
 .playwright-mcp
-
+**/**/data
+# Master encryption key (auto-generated)
+data/.master-key
 
 
 .nx/cache
