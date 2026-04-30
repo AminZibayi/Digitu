@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'path';
+import serve from 'electron-serve';
 import { Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger, normalizeDigikalaSettings } from '@digikala/core';
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService } from '@digikala/variant-creator';
@@ -7,6 +8,14 @@ import { SettingsStore } from './SettingsStore';
 import { IPC_CHANNELS, parseRunUploadInput, parseRunVariantCreationInput, parseSaveSettingsInput, toIpcErrorEnvelope } from './ipcContracts';
 import { formatNativeModuleReadinessError } from './runtimeReadiness';
 import { BRANDING } from '@digikala/branding';
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+const appServe = serve({
+    directory: isDev 
+        ? path.join(__dirname, '../../frontend/out')
+        : path.join(process.resourcesPath, 'frontend', 'out')
+});
 
 const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
@@ -38,7 +47,7 @@ app.whenReady().then(() => {
         minWidth: 900,
         minHeight: 600,
         title: BRANDING.displayName,
-        icon: path.join(__dirname, '../assets/icon.svg'),
+        icon: path.join(__dirname, process.platform === 'win32' ? '../assets/icon.ico' : '../assets/icon.png'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -46,13 +55,12 @@ app.whenReady().then(() => {
         },
     });
 
-    const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev) {
-        mainWindow.loadURL('http://localhost:3000');
-        mainWindow.webContents.openDevTools();
-    } else {
-        const frontendPath = path.join(process.resourcesPath, 'frontend', 'out', 'index.html');
-        mainWindow.loadFile(frontendPath);
+    if (mainWindow) {
+        appServe(mainWindow).then(() => {
+            if (isDev) {
+                mainWindow?.webContents.openDevTools();
+            }
+        });
     }
 
     logger.on('log', (entry: any) => {

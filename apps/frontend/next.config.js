@@ -5,9 +5,8 @@ const nextConfig = {
   output: 'export',
   // Required: each route becomes its own index.html for Electron's loadFile()
   trailingSlash: true,
-  // Keep relative assets for exported production builds (Electron file://),
-  // but use default absolute assets in dev so nested routes don't request /<route>/_next/*
-  assetPrefix: isDev ? undefined : '',
+  // Keep relative assets for exported production builds (Electron file://)
+  assetPrefix: undefined,
   images: {
     unoptimized: true,
   },

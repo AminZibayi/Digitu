@@ -41,7 +41,8 @@ async function generate() {
     const buffer = await fs.promises.readFile(darkPng);
     const ico = await pngToIco(buffer);
     fs.writeFileSync(path.join(FRONTEND_PUBLIC, 'favicon.ico'), ico);
-    console.log('Generated favicon.ico');
+    fs.writeFileSync(path.join(DESKTOP_ASSETS, 'icon.ico'), ico);
+    console.log('Generated favicon.ico and icon.ico');
 
     // Various sizes for PWA/Manifest
     const sizes = [192, 512];

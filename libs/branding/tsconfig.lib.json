@@ -1,8 +1,13 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "rootDir": "src",
+    "outDir": "./dist",
     "declaration": true,
+    "declarationDir": "./dist",
+    "noEmit": false,
     "types": ["node"]
   },
   "include": ["src/**/*.ts"]
