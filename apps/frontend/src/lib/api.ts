@@ -76,7 +76,7 @@ export async function reportLog(level: string, message: string, data?: any) {
       (window as any).electron.log(level, message, data);
       return;
     }
-    await fetch('http://localhost:3001/api/log', {
+    await fetch(`${API_BASE}/api/log`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ level, message, data, source: 'frontend' })
@@ -175,12 +175,12 @@ export const api = {
 };
 
 export async function fetchFixtures() {
-  const res = await fetch('http://localhost:3001/api/variants/fixtures');
+  const res = await fetch(`${API_BASE}/api/variants/fixtures`);
   return res.json();
 }
 
 export async function runVariantFixture(fixture: string, config: any, dryRun: boolean) {
-  const res = await fetch('http://localhost:3001/api/variants/run', {
+  const res = await fetch(`${API_BASE}/api/variants/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fixture, config, dryRun })
@@ -189,7 +189,7 @@ export async function runVariantFixture(fixture: string, config: any, dryRun: bo
 }
 
 export async function uploadCSVFixture(name: string, csvText: string) {
-  const res = await fetch(`http://localhost:3001/api/variants/fixtures/${name}/upload-csv`, {
+  const res = await fetch(`${API_BASE}/api/variants/fixtures/${name}/upload-csv`, {
     method: 'POST',
     headers: { 'Content-Type': 'text/csv' },
     body: csvText

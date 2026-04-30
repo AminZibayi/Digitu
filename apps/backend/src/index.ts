@@ -52,10 +52,10 @@ server.on('upgrade', (request, socket, head) => {
 
 const dbDir = path.join(process.cwd(), 'data');
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-const dbPath = path.join(dbDir, 'digikala-auto.sqlite');
+const dbPath = path.join(dbDir, 'digikala-auto.pglite');
 const settingsPath = path.join(dbDir, 'digikala-settings.secure.json');
 
-const db = new Database(dbPath);
+let db: Database;
 const settingsStore = new SettingsStore(settingsPath, process.env.DIGIKALA_SETTINGS_SECRET || '');
 let settings: DigikalaSettings | null = null;
 try {
@@ -102,8 +102,6 @@ logger.on('log', (entry: any) => {
   broadcastSse('log-message', entry);
 });
 
-logger.info('Backend API initialized', { dbPath, hasSettings: Boolean(settings) });
-
 app.get('/api/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -134,9 +132,9 @@ app.get('/api/settings', (_req, res) => {
   });
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
-    const { productsUploaded, variantsCreated, lastRunAt } = loadStatsPayload(dbPath);
+    const { productsUploaded, variantsCreated, lastRunAt } = await loadStatsPayload(dbPath);
     res.json({ success: true, stats: buildStatsPayload({ productsUploaded, variantsCreated, lastRunAt }) });
   } catch (error: unknown) {
     const payload = toApiErrorPayload(error, req, 'STATS_LOAD_FAILED', 'Failed to load stats', 500);
@@ -255,7 +253,18 @@ const frontendOutPath = path.join(__dirname, '..', '..', 'frontend', 'out');
 app.use(express.static(frontendOutPath));
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  logger.info(`Backend listening on port ${PORT}`);
-  logger.info(`Serving static files from ${frontendOutPath}`);
+
+async function bootstrap() {
+  db = await Database.create(dbPath);
+  logger.info('Backend API initialized', { dbPath, hasSettings: Boolean(settings) });
+
+  server.listen(PORT, () => {
+    logger.info(`Backend listening on port ${PORT}`);
+    logger.info(`Serving static files from ${frontendOutPath}`);
+  });
+}
+
+bootstrap().catch((err) => {
+  logger.error('Failed to start backend', { error: err.message });
+  process.exit(1);
 });

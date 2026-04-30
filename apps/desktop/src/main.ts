@@ -17,7 +17,7 @@ const appServe = serve({
         : path.join(process.resourcesPath, 'frontend', 'out')
 });
 
-const dbPath = path.join(app.getPath('userData'), 'digikala-auto.sqlite');
+const dbPath = path.join(app.getPath('userData'), 'digikala-auto.pglite');
 const settingsPath = path.join(app.getPath('userData'), 'digikala-settings.secure.json');
 let db: Database | null = null;
 const settingsStore = new SettingsStore(settingsPath);
@@ -25,9 +25,9 @@ let settings: DigikalaSettings | null = null;
 
 let mainWindow: BrowserWindow | null = null;
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     try {
-        db = new Database(dbPath);
+        db = await Database.create(dbPath);
     } catch (error: unknown) {
         dialog.showErrorBox('Startup Error', formatNativeModuleReadinessError(String(error)));
         app.quit();
@@ -109,7 +109,7 @@ app.whenReady().then(() => {
             : { configured: false };
     });
 
-    ipcMain.handle('get-stats', async () => loadStatsPayload(dbPath));
+    ipcMain.handle('get-stats', async () => await loadStatsPayload(dbPath));
 
     ipcMain.handle('save-settings', async (_event, payload: unknown) => {
         try {

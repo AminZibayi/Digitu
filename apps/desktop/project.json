@@ -11,6 +11,13 @@
         "command": "tsc && electron dist/main.js",
         "cwd": "apps/desktop"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "apps/desktop"
+      }
     }
   },
   "implicitDependencies": ["@digikala/frontend"]

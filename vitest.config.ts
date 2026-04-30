@@ -13,6 +13,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       '**/.worktrees/**',
       '**/worktrees/**',
+      '**/dist/**',
     ],
   },
 });

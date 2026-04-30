@@ -24,7 +24,7 @@ class VariantCreatorService {
                 let skipped = 0;
                 for (const draft of this.buildVariantDrafts(resolvedConfig, product.productId)) {
                     const fingerprint = this.variantFingerprint(product.productId, draft.themeValueId, draft.payload.price, draft.payload.warranty_id, draft.payload.site);
-                    if (this.db.hasVariantState(fingerprint) || existingFingerprints.has(fingerprint)) {
+                    if (await this.db.hasVariantState(fingerprint) || existingFingerprints.has(fingerprint)) {
                         skipped += 1;
                         continue;
                     }
@@ -37,7 +37,7 @@ class VariantCreatorService {
                     if (!variantId) {
                         throw new Error(`Variant API response missing variant id for product ${product.productId}`);
                     }
-                    this.db.addVariantState(fingerprint, product.productId, variantId);
+                    await this.db.addVariantState(fingerprint, product.productId, variantId);
                     created += 1;
                 }
                 const status = created > 0 ? (dryRun ? 'success (dry-run)' : 'success') : 'skipped (duplicate)';

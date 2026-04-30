@@ -105,7 +105,7 @@ export class ProductUploaderService {
           await this.publishProduct(productId);
         }
 
-        this.db.addProduct(productId, title, row.model, csvPath);
+        await this.db.addProduct(productId, title, row.model, csvPath);
         onProgress?.(i, parsedRows.length, title, 'success');
         results.push({ status: 'success', title, productId });
       } catch (error: unknown) {

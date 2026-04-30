@@ -62,7 +62,7 @@ class ProductUploaderService {
                     await new Promise((resolve) => setTimeout(resolve, 500));
                     await this.publishProduct(productId);
                 }
-                this.db.addProduct(productId, title, row.model, csvPath);
+                await this.db.addProduct(productId, title, row.model, csvPath);
                 onProgress?.(i, parsedRows.length, title, 'success');
                 results.push({ status: 'success', title, productId });
             }

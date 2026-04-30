@@ -43,7 +43,7 @@ export class VariantCreatorService {
 
         for (const draft of this.buildVariantDrafts(resolvedConfig, product.productId)) {
           const fingerprint = this.variantFingerprint(product.productId, draft.themeValueId, draft.payload.price, draft.payload.warranty_id, draft.payload.site);
-          if (this.db.hasVariantState(fingerprint) || existingFingerprints.has(fingerprint)) {
+          if (await this.db.hasVariantState(fingerprint) || existingFingerprints.has(fingerprint)) {
             skipped += 1;
             continue;
           }
@@ -62,7 +62,7 @@ export class VariantCreatorService {
             throw new Error(`Variant API response missing variant id for product ${product.productId}`);
           }
 
-          this.db.addVariantState(fingerprint, product.productId, variantId);
+          await this.db.addVariantState(fingerprint, product.productId, variantId);
           created += 1;
         }
 

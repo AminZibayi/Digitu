@@ -1,4 +1,4 @@
-import DatabaseConstructor, { Database as SQLiteDatabase } from 'better-sqlite3';
+import { PGlite } from '@electric-sql/pglite';
 import path from 'path';
 import fs from 'fs';
 import { logger } from './Logger';
@@ -21,35 +21,41 @@ export interface VariantStateRecord {
 }
 
 export class Database {
-  private db: SQLiteDatabase;
+  private db: PGlite;
 
-  constructor(dbPath: string) {
+  private constructor(db: PGlite) {
+    this.db = db;
+  }
+
+  static async create(dbPath: string): Promise<Database> {
     const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    this.db = new DatabaseConstructor(dbPath);
-    this.initSchema();
+    const db = new PGlite(`file://${dbPath}`);
+    const instance = new Database(db);
+    await instance.initSchema();
+    return instance;
   }
 
-  private initSchema() {
-    this.db.exec(`
+  private async initSchema() {
+    await this.db.exec(`
       CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         productId INTEGER NOT NULL UNIQUE,
         title TEXT NOT NULL,
         model TEXT,
         sourceFile TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS variant_state (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         fingerprint TEXT NOT NULL UNIQUE,
         productId INTEGER NOT NULL,
         variantId INTEGER NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     logger.debug('Database schema initialized');
@@ -57,53 +63,55 @@ export class Database {
 
   // --- Products API ---
 
-  addProduct(productId: number, title: string, model: string | null = null, sourceFile: string | null = null): number {
-    const stmt = this.db.prepare(`
-      INSERT INTO products (productId, title, model, sourceFile) 
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(productId) DO UPDATE SET 
-        title=excluded.title, 
-        model=excluded.model, 
-        sourceFile=excluded.sourceFile
-    `);
-    const info = stmt.run(productId, title, model, sourceFile);
-    return info.lastInsertRowid as number;
+  async addProduct(productId: number, title: string, model: string | null = null, sourceFile: string | null = null): Promise<number> {
+    const res = await this.db.query<{ id: number }>(
+      `INSERT INTO products (productId, title, model, sourceFile) 
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT(productId) DO UPDATE SET 
+         title=EXCLUDED.title, 
+         model=EXCLUDED.model, 
+         sourceFile=EXCLUDED.sourceFile
+       RETURNING id`,
+      [productId, title, model, sourceFile]
+    );
+    return res.rows[0].id;
   }
 
-  getProduct(productId: number): ProductRecord | undefined {
-    const stmt = this.db.prepare('SELECT * FROM products WHERE productId = ?');
-    return stmt.get(productId) as ProductRecord | undefined;
+  async getProduct(productId: number): Promise<ProductRecord | undefined> {
+    const res = await this.db.query('SELECT * FROM products WHERE productId = $1', [productId]);
+    return res.rows[0] as ProductRecord | undefined;
   }
 
-  getAllProducts(): ProductRecord[] {
-    const stmt = this.db.prepare('SELECT * FROM products ORDER BY createdAt DESC');
-    return stmt.all() as ProductRecord[];
+  async getAllProducts(): Promise<ProductRecord[]> {
+    const res = await this.db.query('SELECT * FROM products ORDER BY createdAt DESC');
+    return res.rows as ProductRecord[];
   }
 
   // --- Variant State API (Idempotency) ---
 
-  /** Fingerprint format: `${productId}|${themeValueId}|${price}|${warranty_id}|${site}` */
-  addVariantState(fingerprint: string, productId: number, variantId: number): number {
-    const stmt = this.db.prepare(`
-      INSERT INTO variant_state (fingerprint, productId, variantId) 
-      VALUES (?, ?, ?)
-      ON CONFLICT(fingerprint) DO NOTHING
-    `);
-    const info = stmt.run(fingerprint, productId, variantId);
-    return info.lastInsertRowid as number;
+  /** Fingerprint format: \`${productId}|${themeValueId}|${price}|${warranty_id}|${site}\` */
+  async addVariantState(fingerprint: string, productId: number, variantId: number): Promise<number | undefined> {
+    const res = await this.db.query<{ id: number }>(
+      `INSERT INTO variant_state (fingerprint, productId, variantId) 
+       VALUES ($1, $2, $3)
+       ON CONFLICT(fingerprint) DO NOTHING
+       RETURNING id`,
+      [fingerprint, productId, variantId]
+    );
+    return res.rows[0]?.id ?? undefined;
   }
 
-  getVariantState(fingerprint: string): VariantStateRecord | undefined {
-    const stmt = this.db.prepare('SELECT * FROM variant_state WHERE fingerprint = ?');
-    return stmt.get(fingerprint) as VariantStateRecord | undefined;
+  async getVariantState(fingerprint: string): Promise<VariantStateRecord | undefined> {
+    const res = await this.db.query('SELECT * FROM variant_state WHERE fingerprint = $1', [fingerprint]);
+    return res.rows[0] as VariantStateRecord | undefined;
   }
 
-  hasVariantState(fingerprint: string): boolean {
-    const stmt = this.db.prepare('SELECT 1 FROM variant_state WHERE fingerprint = ?');
-    return stmt.get(fingerprint) !== undefined;
+  async hasVariantState(fingerprint: string): Promise<boolean> {
+    const res = await this.db.query('SELECT 1 FROM variant_state WHERE fingerprint = $1', [fingerprint]);
+    return res.rows.length > 0;
   }
 
-  close() {
-    this.db.close();
+  async close() {
+    await this.db.close();
   }
 }
