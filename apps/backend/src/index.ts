@@ -1,3 +1,4 @@
+console.log("Starting backend script...");
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -9,6 +10,7 @@ import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStat
 import { ProductUploaderService } from '@digikala/product-uploader';
 import { VariantCreatorService, listFixtures, loadFixture, saveFixture, deleteFixture, parseCSVToFixture } from '@digikala/variant-creator';
 import { SettingsStore } from './SettingsStore';
+import { getMasterKey } from './masterKey';
 import { ApiError, toApiErrorPayload } from './apiError';
 import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreationRequest } from './requestValidation';
 
@@ -56,7 +58,8 @@ const dbPath = path.join(dbDir, 'digikala-auto.pglite');
 const settingsPath = path.join(dbDir, 'digikala-settings.secure.json');
 
 let db: Database;
-const settingsStore = new SettingsStore(settingsPath, process.env.DIGIKALA_SETTINGS_SECRET || '');
+const masterKey = getMasterKey(dbDir);
+const settingsStore = new SettingsStore(settingsPath, masterKey);
 let settings: DigikalaSettings | null = null;
 try {
   settings = settingsStore.load();
@@ -255,7 +258,9 @@ app.use(express.static(frontendOutPath));
 const PORT = process.env.PORT || 3001;
 
 async function bootstrap() {
+  console.log("Entering bootstrap...");
   db = await Database.create(dbPath);
+  console.log("Database initialized");
   logger.info('Backend API initialized', { dbPath, hasSettings: Boolean(settings) });
 
   server.listen(PORT, () => {
