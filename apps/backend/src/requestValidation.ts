@@ -5,7 +5,7 @@ type GenericRecord = Record<string, unknown>;
 
 export interface ParsedUploadRequest {
   csvPath: string;
-  autoPublish?: boolean;
+  autoPublish: boolean;
 }
 
 export interface ParsedVariantCreationRequest {

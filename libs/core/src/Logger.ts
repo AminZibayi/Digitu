@@ -1,4 +1,5 @@
 import pino, { Logger as PinoLogger } from 'pino';
+import pretty from 'pino-pretty';
 import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
@@ -19,18 +20,10 @@ if (!fs.existsSync(logDir)) {
 
 const logFile = path.join(logDir, `digikala-auto-${new Date().toISOString().split('T')[0]}.log`);
 
-const transport = pino.transport({
-  targets: [
-    {
-      target: 'pino/file',
-      options: { destination: logFile, mkdir: true },
-      level: process.env.LOG_LEVEL || 'info',
-    },
-    ...(process.env.NODE_ENV === 'development'
-      ? [{ target: 'pino-pretty', options: { colorize: true }, level: 'debug' }]
-      : []),
-  ],
-});
+const streams = [
+  { stream: fs.createWriteStream(logFile, { flags: 'a' }), level: (process.env.LOG_LEVEL as any) || 'info' },
+  { stream: pretty({ colorize: true }), level: (process.env.LOG_LEVEL as any) || 'info' },
+];
 
 const baseLogger = pino({
   level: process.env.LOG_LEVEL || 'info',
@@ -38,7 +31,7 @@ const baseLogger = pino({
     paths: ['*.cookie', '*.authorization', '*.token', '*.password', 'req.headers.cookie', 'res.headers.set-cookie'],
     censor: '[Redacted]',
   },
-}, transport);
+}, pino.multistream(streams));
 
 const emitter = new EventEmitter();
 
