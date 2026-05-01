@@ -19,6 +19,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function UploaderPage() {
   const [csvPath, setCsvPath]         = useState('');
+  const [csvFile, setCsvFile]         = useState<File | null>(null);
   const [autoPublish, setAutoPublish] = useState(false);
   const [running, setRunning]         = useState(false);
   const [rows, setRows]               = useState<RowStatus[]>([]);
@@ -49,7 +50,7 @@ export default function UploaderPage() {
   }, []);
 
   const handleRun = useCallback(async () => {
-    if (!csvPath.trim()) {
+    if (!csvPath.trim() && !csvFile) {
       setInputError('مسیر فایل CSV را وارد کنید.');
       return;
     }
@@ -58,7 +59,7 @@ export default function UploaderPage() {
     setRows([]);
     setResult(null);
     try {
-      const res = await api.runUpload(csvPath, autoPublish);
+      const res = await api.runUpload(csvPath, autoPublish, csvFile ?? undefined);
       setResult(res.success
         ? `✅ تکمیل شد: ${res.results?.filter((r: any) => r.status === 'success').length ?? 0} مورد موفق.`
         : `❌ خطا: ${typeof res.error === 'string' ? res.error : res.error?.message ?? 'Upload failed'}`);
@@ -70,12 +71,13 @@ export default function UploaderPage() {
     } finally {
       setRunning(false);
     }
-  }, [csvPath]);
+  }, [csvPath, autoPublish, csvFile]);
 
   const handleBrowse = useCallback(async () => {
-    const path = await api.pickCsvPath();
-    if (path) {
-      setCsvPath(path);
+    const file = await api.pickCsvFile();
+    if (file) {
+      setCsvFile(file);
+      setCsvPath(URL.createObjectURL(file));
       setInputError(null);
     }
   }, []);
@@ -115,7 +117,7 @@ export default function UploaderPage() {
           <button
             id="run-upload-btn"
             onClick={handleRun}
-            disabled={running || !csvPath.trim()}
+            disabled={running || (!csvPath.trim() && !csvFile)}
             className="btn-primary"
           >
             {running ? 'در حال اجرا…' : 'شروع آپلود'}

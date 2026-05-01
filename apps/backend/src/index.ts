@@ -3,7 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import http from 'http';
+import multer from 'multer';
 import pinoHttp from 'pino-http';
 import { WebSocket, WebSocketServer } from 'ws';
 import { buildStatsPayload, Database, DigikalaClient, DigikalaSettings, loadStatsPayload, logger } from '@digikala/core';
@@ -23,6 +25,7 @@ app.use(pinoHttp({
   }
 }));
 app.use(express.json({ limit: '50mb' }));
+const upload = multer({ dest: os.tmpdir() });
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
@@ -174,10 +177,22 @@ app.post('/api/settings', (req, res) => {
   }
 });
 
-app.post('/api/upload', async (req, res) => {
+app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
   try {
-    const { csvPath, autoPublish } = parseUploadRequest(req.body);
-    logger.info('Received HTTP: run-upload', { csvPath, autoPublish });
+    let csvPath: string;
+    let autoPublish: boolean;
+
+    if (req.file) {
+      csvPath = req.file.path;
+      autoPublish = req.body.autoPublish === 'true';
+      logger.info('Received HTTP: run-upload (multipart)', { originalName: req.file.originalname, autoPublish });
+    } else {
+      const parsed = parseUploadRequest(req.body);
+      csvPath = parsed.csvPath;
+      autoPublish = parsed.autoPublish;
+      logger.info('Received HTTP: run-upload', { csvPath, autoPublish });
+    }
+
     const services = getServices();
     const results = await services.uploader.runUpload(
       csvPath,
@@ -186,6 +201,11 @@ app.post('/api/upload', async (req, res) => {
         broadcastSse('upload-progress', { index, total, title, status });
       }
     );
+
+    if (req.file) {
+      fs.unlink(req.file.path, () => { /* cleanup */ });
+    }
+
     res.json({ success: true, results });
   } catch (error: unknown) {
     const payload = toApiErrorPayload(error, req, 'UPLOAD_FAILED', 'Upload failed', 500);
