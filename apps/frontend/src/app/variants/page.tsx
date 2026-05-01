@@ -9,7 +9,7 @@ export default function VariantsPage() {
   const [newName, setNewName] = useState('');
   const [running, setRunning] = useState(false);
 
-  const load = () => fetchFixtures().then(d => setFixtures(d.fixtures || [])).catch(e => console.error('Failed to load fixtures', e));
+  const load = () => fetchFixtures().then(d => setFixtures(d.fixtures || [])).catch(() => setFixtures([]));
   useEffect(() => { load(); }, []);
 
   const handleUpload = async () => {

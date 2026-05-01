@@ -33,7 +33,7 @@ export class Database {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    const db = new PGlite(`file://${dbPath}`);
+    const db = new PGlite(dbPath);
     const instance = new Database(db);
     await instance.initSchema();
     return instance;
