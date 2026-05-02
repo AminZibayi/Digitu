@@ -274,6 +274,15 @@ variantRouter.post('/fixtures', (req, res) => {
   res.json({ success: true });
 });
 
+variantRouter.get('/fixtures/:name', (req, res) => {
+  try {
+    const products = loadFixture(fixturesDir, req.params.name);
+    res.json({ success: true, products });
+  } catch (error: unknown) {
+    res.status(404).json({ success: false, error: 'Fixture not found' });
+  }
+});
+
 variantRouter.delete('/fixtures/:name', (req, res) => {
   deleteFixture(fixturesDir, req.params.name);
   res.json({ success: true });
@@ -295,19 +304,19 @@ variantRouter.post('/run', async (req, res) => {
       throw new ApiError('INVALID_REQUEST', 'fixture must contain at least one product', 400);
     }
     
-    const services = getServices();
+const services = getServices();
     const results = await services.creator.runCreation(
       products,
       config,
       dryRun,
-      (index, total, title, status) => {
-        broadcastSse('variant-progress', { index, total, title, status });
+      (index, total, title, status, error) => {
+        broadcastSse('variant-progress', { index, total, title, status, error });
       }
     );
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, req, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
-    res.status(payload.status).json({
+    const payload = toApiErrorPayload(error, req as any, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
+res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
     });

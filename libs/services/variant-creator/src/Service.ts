@@ -22,7 +22,7 @@ export class VariantCreatorService {
     products: any[],
     config: any,
     dryRun: boolean,
-    onProgress?: (index: number, total: number, productTitle: string, status: string) => void,
+    onProgress?: (index: number, total: number, productTitle: string, status: string, error?: string) => void,
   ) {
     const validatedProducts = this.parseProducts(products);
     const resolvedConfig = this.parseConfig(config);
@@ -72,7 +72,7 @@ export class VariantCreatorService {
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown variant creation error';
         logger.error(`Failed creating variant for ${product.productTitle}`, { error: message });
-        onProgress?.(i, validatedProducts.length, product.productTitle, 'failed');
+        onProgress?.(i, validatedProducts.length, product.productTitle, 'failed', message);
         results.push({ status: 'failed', title: product.productTitle, error: message });
       }
     }
