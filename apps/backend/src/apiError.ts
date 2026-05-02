@@ -26,18 +26,11 @@ export function toApiErrorPayload(
   fallbackStatus: number,
 ): ApiErrorPayload {
   const err = error instanceof Error ? error : new Error(String(error));
-  
+
   if (req) {
-    logger.error({ 
-      err, 
-      req: { 
-        method: req.method, 
-        url: req.url, 
-        body: req.body 
-      } 
+    logger.error({
+      req: { method: req.method, url: req.url, body: req.body && typeof req.body === 'object' ? '[object]' : req.body }
     }, 'API Error');
-  } else {
-    logger.error({ err }, 'API Error');
   }
 
   if (error instanceof ApiError) {

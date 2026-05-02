@@ -42,7 +42,7 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
         const method = (emitter as any)[prop];
         return method.bind(emitter);
       }
-      
+
       const value = (target as any)[prop];
       if (typeof value === 'function' && ['info', 'error', 'warn', 'debug', 'fatal', 'trace'].includes(prop as string)) {
         return (msgOrObj: any, maybeData?: any) => {
@@ -50,11 +50,9 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
           let finalMsg = msgOrObj;
 
           if (typeof msgOrObj === 'string' && typeof maybeData === 'object' && maybeData !== null) {
-            value.call(target, maybeData, msgOrObj);
             finalData = maybeData;
             finalMsg = msgOrObj;
           } else {
-            value.call(target, msgOrObj, maybeData);
             if (typeof msgOrObj === 'object') {
               finalData = msgOrObj;
               finalMsg = maybeData;
@@ -66,9 +64,14 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
 
           let emitData = finalData;
           if (finalData && typeof finalData === 'object') {
-            const { req, res, ...rest } = finalData as any;
-            emitData = rest;
+            const { req, res, err, ...rest } = finalData as any;
+            emitData = { ...rest };
+            if (err && typeof err === 'object' && err instanceof Error) {
+              emitData.err = { message: err.message, stack: err.stack };
+            }
           }
+
+          value.call(target, emitData, finalMsg);
 
           emitter.emit('log', {
             timestamp: new Date().toISOString(),
@@ -78,7 +81,7 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
           });
         };
       }
-      
+
       if (prop === 'child') {
         return (bindings: any) => createWrappedLogger(target.child(bindings));
       }

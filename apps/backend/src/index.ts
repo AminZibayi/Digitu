@@ -290,7 +290,7 @@ async function bootstrap() {
   console.log("Database initialized");
   logger.info('Backend API initialized', { dbPath, hasSettings: Boolean(settings) });
 
-  server.listen(PORT, '127.0.0.1', () => {
+  server.listen(+PORT, '127.0.0.1', () => {
     logger.info(`Backend listening on 127.0.0.1:${PORT}`);
     logger.info(`Serving static files from ${frontendOutPath}`);
   });
