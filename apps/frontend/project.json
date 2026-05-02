@@ -15,7 +15,8 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "build",
-        "dev": true
+        "dev": true,
+        "port": 3000
       },
       "configurations": {
         "production": {
@@ -28,7 +29,8 @@
       "executor": "@nx/next:server",
       "options": {
         "buildTarget": "build",
-        "dev": false
+        "dev": false,
+        "port": 3000
       }
     },
     "export": {
