@@ -21,9 +21,7 @@ app.use(cors());
 
 app.use(pinoHttp({
   logger,
-  autoLogging: {
-    ignore: (req) => req.url === '/api/events' || req.url === '/api/logs/stream',
-  },
+  autoLogging: false,
 }));
 
 app.use((req, res, next) => {

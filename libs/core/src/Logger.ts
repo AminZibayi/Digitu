@@ -35,6 +35,32 @@ const baseLogger = pino({
 
 const emitter = new EventEmitter();
 
+function scrub(obj: any): any {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+  
+  // If it looks like a Node.js Request or Response object, just return a summary
+  if (obj.socket || obj._readableState || obj._writableState || obj.client || obj.incoming) {
+    return {
+      method: obj.method,
+      url: obj.url,
+      statusCode: obj.statusCode,
+      headers: obj.headers ? { host: obj.headers.host } : undefined
+    };
+  }
+
+  const result: any = {};
+  for (const key in obj) {
+    if (['req', 'res'].includes(key)) {
+      result[key] = scrub(obj[key]);
+    } else if (key === 'err' && obj[key] instanceof Error) {
+      result[key] = { message: obj[key].message, stack: obj[key].stack };
+    } else {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
 function createWrappedLogger(pinoInstance: PinoLogger): any {
   const handler: ProxyHandler<PinoLogger> = {
     get(target, prop) {
@@ -52,38 +78,25 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
           if (typeof msgOrObj === 'string' && typeof maybeData === 'object' && maybeData !== null) {
             finalData = maybeData;
             finalMsg = msgOrObj;
-          } else {
-            if (typeof msgOrObj === 'object') {
-              finalData = msgOrObj;
-              finalMsg = maybeData;
-            } else {
-              finalData = maybeData;
-              finalMsg = msgOrObj;
-            }
+          } else if (typeof msgOrObj === 'object' && msgOrObj !== null) {
+            finalData = msgOrObj;
+            finalMsg = maybeData;
           }
 
-          let emitData = finalData;
-          if (finalData && typeof finalData === 'object') {
-            const { req, res, err, ...rest } = finalData as any;
-            emitData = { ...rest };
-            if (err && typeof err === 'object' && err instanceof Error) {
-              emitData.err = { message: err.message, stack: err.stack };
-            }
-          }
-
-          value.call(target, emitData, finalMsg);
+          const scrubbedData = scrub(finalData);
+          value.call(target, scrubbedData, finalMsg);
 
           emitter.emit('log', {
             timestamp: new Date().toISOString(),
             level: (prop === 'warn' ? 'warn' : prop) as LogLevelName,
-            message: finalMsg,
-            data: emitData
+            message: finalMsg || (typeof finalData === 'string' ? finalData : ''),
+            data: scrubbedData
           });
         };
       }
 
       if (prop === 'child') {
-        return (bindings: any) => createWrappedLogger(target.child(bindings));
+        return (bindings: any) => createWrappedLogger(target.child(scrub(bindings)));
       }
 
       return typeof value === 'function' ? value.bind(target) : value;
