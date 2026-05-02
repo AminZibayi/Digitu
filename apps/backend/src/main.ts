@@ -217,7 +217,8 @@ app.post('/api/upload/parse', upload.single('csvFile'), async (req, res) => {
 });
 
 app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
-  let csvPath: string;
+  let csvPath: string | undefined;
+  let products: any[] | undefined;
   let autoPublish: boolean;
   let dryRun = false;
   const tempPath = req.file?.path;
@@ -231,14 +232,15 @@ app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
     } else {
       const parsed = parseUploadRequest(req.body);
       csvPath = parsed.csvPath;
+      products = parsed.products;
       autoPublish = parsed.autoPublish;
-      dryRun = Boolean(parsed.dryRun);
-      logger.info('Received HTTP: run-upload', { csvPath, autoPublish, dryRun });
+      dryRun = parsed.dryRun;
+      logger.info('Received HTTP: run-upload', { csvPath: !!csvPath, hasProducts: !!products, autoPublish, dryRun });
     }
 
     const services = getServices();
     const results = await services.uploader.runUpload(
-      csvPath,
+      products ?? csvPath!,
       autoPublish,
       dryRun,
       (index, total, title, status, error) => {
@@ -296,17 +298,24 @@ variantRouter.post('/fixtures/:name/upload-csv', express.text({ type: 'text/csv'
 
 variantRouter.post('/run', async (req, res) => {
   try {
-    const { fixture, config, dryRun } = parseVariantCreationRequest(req.body);
-    logger.info('Received HTTP: run-variant-creation', { fixture, dryRun });
-    const products = loadFixture(fixturesDir, fixture);
-    
-    if (!products || products.length === 0) {
-      throw new ApiError('INVALID_REQUEST', 'fixture must contain at least one product', 400);
+    const { fixture, products, config, dryRun } = parseVariantCreationRequest(req.body);
+    logger.info('Received HTTP: run-variant-creation', { fixture: fixture || '(products)', hasProducts: !!products, dryRun });
+
+    let productsToUse = products;
+    if (!productsToUse) {
+      if (!fixture) {
+        throw new ApiError('INVALID_REQUEST', 'fixture or products is required', 400);
+      }
+      productsToUse = loadFixture(fixturesDir, fixture);
     }
-    
-const services = getServices();
+
+    if (!productsToUse || productsToUse.length === 0) {
+      throw new ApiError('INVALID_REQUEST', 'No products to process', 400);
+    }
+
+    const services = getServices();
     const results = await services.creator.runCreation(
-      products,
+      productsToUse,
       config,
       dryRun,
       (index, total, title, status, error) => {
@@ -316,7 +325,7 @@ const services = getServices();
     res.json({ success: true, results });
   } catch (error: unknown) {
     const payload = toApiErrorPayload(error, req as any, 'VARIANT_CREATION_FAILED', 'Variant creation failed', 500);
-res.status(payload.status).json({
+    res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },
     });

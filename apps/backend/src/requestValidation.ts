@@ -4,13 +4,15 @@ import { ApiError } from './apiError';
 type GenericRecord = Record<string, unknown>;
 
 export interface ParsedUploadRequest {
-  csvPath: string;
+  csvPath?: string;
+  products?: any[];
   autoPublish: boolean;
   dryRun: boolean;
 }
 
 export interface ParsedVariantCreationRequest {
-  fixture: string;
+  fixture?: string;
+  products?: any[];
   config: GenericRecord;
   dryRun: boolean;
 }
@@ -32,8 +34,17 @@ function asNonEmptyString(value: unknown, field: string): string {
 
 export function parseUploadRequest(body: unknown): ParsedUploadRequest {
   const payload = asRecord(body, 'request body');
+  const csvPathRaw = String(payload.csvPath ?? '').trim();
+  const csvPath = csvPathRaw || undefined;
+  const products = Array.isArray(payload.products) ? payload.products : undefined;
+
+  if (!csvPath && !products) {
+    throw new ApiError('INVALID_REQUEST', 'csvPath or products is required', 400);
+  }
+
   return {
-    csvPath: asNonEmptyString(payload.csvPath, 'csvPath'),
+    csvPath,
+    products,
     autoPublish: Boolean(payload.autoPublish),
     dryRun: Boolean(payload.dryRun),
   };
@@ -41,8 +52,14 @@ export function parseUploadRequest(body: unknown): ParsedUploadRequest {
 
 export function parseVariantCreationRequest(body: unknown): ParsedVariantCreationRequest {
   const payload = asRecord(body, 'request body');
-  
-  const fixture = asNonEmptyString(payload.fixture, 'fixture');
+
+  const fixtureRaw = String(payload.fixture ?? '').trim();
+  const fixture = fixtureRaw || undefined;
+  const products = Array.isArray(payload.products) ? payload.products : undefined;
+
+  if (!fixture && !products) {
+    throw new ApiError('INVALID_REQUEST', 'fixture or products is required', 400);
+  }
 
   const config = asRecord(payload.config, 'config');
   const themeId = Number(config.themeId);
@@ -55,6 +72,7 @@ export function parseVariantCreationRequest(body: unknown): ParsedVariantCreatio
 
   return {
     fixture,
+    products,
     config,
     dryRun: Boolean(payload.dryRun),
   };
