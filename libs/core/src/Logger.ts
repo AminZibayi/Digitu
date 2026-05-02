@@ -64,11 +64,17 @@ function createWrappedLogger(pinoInstance: PinoLogger): any {
             }
           }
 
+          let emitData = finalData;
+          if (finalData && typeof finalData === 'object') {
+            const { req, res, ...rest } = finalData as any;
+            emitData = rest;
+          }
+
           emitter.emit('log', {
             timestamp: new Date().toISOString(),
             level: (prop === 'warn' ? 'warn' : prop) as LogLevelName,
             message: finalMsg,
-            data: finalData
+            data: emitData
           });
         };
       }
@@ -92,11 +98,11 @@ export function createLogger(component: string): any {
 
 if (typeof process !== 'undefined') {
   process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
     logger.fatal({ err }, 'Uncaught Exception');
-    process.exit(1);
   });
   process.on('unhandledRejection', (reason) => {
+    console.error('UNHANDLED REJECTION:', reason);
     logger.fatal({ reason }, 'Unhandled Rejection');
-    process.exit(1);
   });
 }

@@ -99,8 +99,14 @@ const getServices = (): { uploader: ProductUploaderService; creator: VariantCrea
 let sseClients: express.Response[] = [];
 
 function broadcastSse(event: string, data: unknown) {
-  sseClients.forEach(client => {
-    client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  sseClients = sseClients.filter((client) => {
+    try {
+      client.write(payload);
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
 
@@ -178,10 +184,11 @@ app.post('/api/settings', (req, res) => {
 });
 
 app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
-  try {
-    let csvPath: string;
-    let autoPublish: boolean;
+  let csvPath: string;
+  let autoPublish: boolean;
+  const tempPath = req.file?.path;
 
+  try {
     if (req.file) {
       csvPath = req.file.path;
       autoPublish = req.body.autoPublish === 'true';
@@ -202,10 +209,6 @@ app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
       }
     );
 
-    if (req.file) {
-      fs.unlink(req.file.path, () => { /* cleanup */ });
-    }
-
     res.json({ success: true, results });
   } catch (error: unknown) {
     const payload = toApiErrorPayload(error, req, 'UPLOAD_FAILED', 'Upload failed', 500);
@@ -213,6 +216,10 @@ app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
       success: false,
       error: { code: payload.code, message: payload.message },
     });
+  } finally {
+    if (tempPath) {
+      fs.unlink(tempPath, () => { /* cleanup */ });
+    }
   }
 });
 
@@ -283,8 +290,8 @@ async function bootstrap() {
   console.log("Database initialized");
   logger.info('Backend API initialized', { dbPath, hasSettings: Boolean(settings) });
 
-  server.listen(PORT, () => {
-    logger.info(`Backend listening on port ${PORT}`);
+  server.listen(PORT, '127.0.0.1', () => {
+    logger.info(`Backend listening on 127.0.0.1:${PORT}`);
     logger.info(`Serving static files from ${frontendOutPath}`);
   });
 }

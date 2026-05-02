@@ -1,7 +1,7 @@
 import { ApiErrorResponse, DigikalaSettingsPayload, DigikalaSettingsState, LogEntry, IpcProgressEvent } from '../app/globals.d';
 
 const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
-const API_BASE = isElectron ? '' : (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '');
+const API_BASE = isElectron ? '' : (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:3001' : '');
 
 let eventSource: EventSource | null = null;
 const listeners = {
@@ -254,7 +254,6 @@ runUpload: async (csvPath: string, autoPublish?: boolean, csvFile?: File) => {
     }
     return null;
   },
-  pickCsvFile,
 };
 
 export async function fetchFixtures() {
