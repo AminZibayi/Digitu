@@ -6,6 +6,7 @@ type GenericRecord = Record<string, unknown>;
 export interface ParsedUploadRequest {
   csvPath: string;
   autoPublish: boolean;
+  dryRun: boolean;
 }
 
 export interface ParsedVariantCreationRequest {
@@ -34,6 +35,7 @@ export function parseUploadRequest(body: unknown): ParsedUploadRequest {
   return {
     csvPath: asNonEmptyString(payload.csvPath, 'csvPath'),
     autoPublish: Boolean(payload.autoPublish),
+    dryRun: Boolean(payload.dryRun),
   };
 }
 

@@ -197,35 +197,58 @@ app.post('/api/settings', (req, res) => {
   }
 });
 
+app.post('/api/upload/parse', upload.single('csvFile'), async (req, res) => {
+  let tempPath = req.file?.path;
+  try {
+    if (!req.file) {
+      throw new ApiError('BAD_REQUEST', 'No file provided', 400);
+    }
+    const services = getServices();
+    const products = services.uploader.parseCSVFile(req.file.path);
+    res.json({ success: true, products });
+  } catch (error: unknown) {
+    const payload = toApiErrorPayload(error, req as any, 'PARSE_FAILED', 'Parse failed', 500);
+    res.status(payload.status).json({ success: false, error: payload });
+  } finally {
+    if (tempPath) {
+      fs.unlink(tempPath, () => { /* cleanup */ });
+    }
+  }
+});
+
 app.post('/api/upload', upload.single('csvFile'), async (req, res) => {
   let csvPath: string;
   let autoPublish: boolean;
+  let dryRun = false;
   const tempPath = req.file?.path;
 
   try {
     if (req.file) {
       csvPath = req.file.path;
       autoPublish = req.body.autoPublish === 'true';
-      logger.info('Received HTTP: run-upload (multipart)', { originalName: req.file.originalname, autoPublish });
+      dryRun = req.body.dryRun === 'true';
+      logger.info('Received HTTP: run-upload (multipart)', { originalName: req.file.originalname, autoPublish, dryRun });
     } else {
       const parsed = parseUploadRequest(req.body);
       csvPath = parsed.csvPath;
       autoPublish = parsed.autoPublish;
-      logger.info('Received HTTP: run-upload', { csvPath, autoPublish });
+      dryRun = Boolean(parsed.dryRun);
+      logger.info('Received HTTP: run-upload', { csvPath, autoPublish, dryRun });
     }
 
     const services = getServices();
     const results = await services.uploader.runUpload(
       csvPath,
       autoPublish,
-      (index, total, title, status) => {
-        broadcastSse('upload-progress', { index, total, title, status });
+      dryRun,
+      (index, total, title, status, error) => {
+        broadcastSse('upload-progress', { index, total, title, status, error });
       }
     );
 
     res.json({ success: true, results });
   } catch (error: unknown) {
-    const payload = toApiErrorPayload(error, req, 'UPLOAD_FAILED', 'Upload failed', 500);
+    const payload = toApiErrorPayload(error, req as any, 'UPLOAD_FAILED', 'Upload failed', 500);
     res.status(payload.status).json({
       success: false,
       error: { code: payload.code, message: payload.message },

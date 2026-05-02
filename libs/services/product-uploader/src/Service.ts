@@ -63,21 +63,32 @@ interface UploadCsvRecord {
 export class ProductUploaderService {
   constructor(private client: DigikalaClient, private db: Database) {}
 
+  public parseCSVFile(filePath: string) {
+    const { parseCSV } = require('../digikala-uploader');
+    return parseCSV(filePath);
+  }
+
   public async runUpload(
-    csvPath: string,
+    input: string | any[],
     autoPublish?: boolean,
-    onProgress?: (index: number, total: number, productTitle: string, status: string) => void,
+    dryRun?: boolean,
+    onProgress?: (index: number, total: number, productTitle: string, status: string, error?: string) => void,
   ) {
-    if (!fs.existsSync(csvPath)) {
-      throw new Error(`CSV File not found: ${csvPath}`);
+    let parsedRows: any[];
+
+    if (Array.isArray(input)) {
+      parsedRows = input;
+    } else {
+      if (!fs.existsSync(input)) {
+        throw new Error(`CSV File not found: ${input}`);
+      }
+      logger.info('Starting CSV parsing', { csvPath: input });
+      const content = fs.readFileSync(input, 'utf-8').replace(/^\uFEFF/, '');
+      const records = parse(content, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
+      parsedRows = records.map((row, i) => this.parseRow(row, i + 2));
     }
 
-    logger.info('Starting CSV parsing', { csvPath });
-    const content = fs.readFileSync(csvPath, 'utf-8').replace(/^\uFEFF/, '');
-    const records = parse(content, { columns: true, skip_empty_lines: true, trim: true }) as Record<string, string>[];
-    const parsedRows = records.map((row, i) => this.parseRow(row, i + 2));
-
-    logger.info(`Loaded ${parsedRows.length} records. Beginning upload pipeline.`);
+    logger.info(`Loaded ${parsedRows.length} records. Beginning upload pipeline.`, { dryRun });
 
     const results: Array<{ status: string; title: string; productId?: number; error?: string }> = [];
 
@@ -89,6 +100,12 @@ export class ProductUploaderService {
       logger.info(`Processing record ${i + 1}/${parsedRows.length}`, { title });
 
       try {
+        if (dryRun) {
+          onProgress?.(i, parsedRows.length, title, 'success (dry-run)');
+          results.push({ status: 'success (dry-run)', title });
+          continue;
+        }
+
         const draftId = await this.saveBasicInfo(row);
         await this.saveAttributes(draftId, row);
         await this.saveTitle(draftId, row);
@@ -105,13 +122,13 @@ export class ProductUploaderService {
           await this.publishProduct(productId);
         }
 
-        await this.db.addProduct(productId, title, row.model, csvPath);
+        await this.db.addProduct(productId, title, row.model, String(input));
         onProgress?.(i, parsedRows.length, title, 'success');
         results.push({ status: 'success', title, productId });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown upload error';
         logger.error(`Failed processing record ${title}`, { error: message });
-        onProgress?.(i, parsedRows.length, title, 'failed');
+        onProgress?.(i, parsedRows.length, title, 'failed', message);
         results.push({ status: 'failed', title, error: message });
       }
     }
