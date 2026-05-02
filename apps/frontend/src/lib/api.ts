@@ -234,7 +234,7 @@ runUpload: async (csvPath: string, autoPublish?: boolean, dryRun?: boolean, csvF
     if (isElectron) {
       return window.electronAPI!.runVariantCreation(products, config, dryRun);
     } else {
-      return fetchJson<{ success: boolean; results?: unknown[]; error?: string }>('/api/variant-creation', {
+      return fetchJson<{ success: boolean; results?: unknown[]; error?: string }>('/api/variants/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products, config, dryRun }),
@@ -271,6 +271,15 @@ export async function fetchFixtures() {
   } catch (error) {
     console.warn('Network error: Could not fetch fixtures');
     return { fixtures: [] };
+  }
+}
+
+export async function getFixture(name: string) {
+  try {
+    const res = await fetch(`${API_BASE}/api/variants/fixtures/${name}`);
+    return await res.json();
+  } catch (error) {
+    throw new ApiRequestError('NETWORK_ERROR', 'سرور در دسترس نیست یا اتصال قطع شده است');
   }
 }
 
