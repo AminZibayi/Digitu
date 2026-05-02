@@ -28,34 +28,55 @@ const streams = [
 const baseLogger = pino({
   level: process.env.LOG_LEVEL || 'info',
   redact: {
-    paths: ['*.cookie', '*.authorization', '*.token', '*.password', 'req.headers.cookie', 'res.headers.set-cookie'],
+    paths: ['*.cookie', '*.authorization', '*.token', '*.password', 'req.headers.cookie', 'res.headers.set-cookie', 'headers.cookie', 'cookie'],
     censor: '[Redacted]',
   },
+  serializers: {
+    req: (req: any) => ({ method: req.method, url: req.url }),
+    res: (res: any) => ({ statusCode: res.statusCode }),
+    err: (err: any) => ({ message: err.message, stack: err.stack }),
+  }
 }, pino.multistream(streams));
 
 const emitter = new EventEmitter();
 
-function scrub(obj: any): any {
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+function scrub(obj: any, depth = 0): any {
+  if (depth > 3) return '[Max Depth reached]';
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+    if (typeof obj === 'string' && obj.length > 500) return obj.slice(0, 500) + '... [truncated]';
+    return obj;
+  }
   
-  // If it looks like a Node.js Request or Response object, just return a summary
+  // If it looks like a Node.js Request or Response object
   if (obj.socket || obj._readableState || obj._writableState || obj.client || obj.incoming) {
     return {
       method: obj.method,
       url: obj.url,
-      statusCode: obj.statusCode,
-      headers: obj.headers ? { host: obj.headers.host } : undefined
+      statusCode: obj.statusCode
     };
   }
 
   const result: any = {};
   for (const key in obj) {
-    if (['req', 'res'].includes(key)) {
-      result[key] = scrub(obj[key]);
+    // Aggressively skip any key that looks like a raw req/res if it wasn't caught by the top check
+    if (['req', 'res', 'request', 'response', 'socket', '_readableState', '_writableState'].includes(key)) {
+       const val = obj[key];
+       if (val && typeof val === 'object') {
+         result[key] = { method: val.method, url: val.url, statusCode: val.statusCode };
+       } else {
+         result[key] = val;
+       }
     } else if (key === 'err' && obj[key] instanceof Error) {
       result[key] = { message: obj[key].message, stack: obj[key].stack };
     } else {
-      result[key] = obj[key];
+      const val = obj[key];
+      if (val && typeof val === 'object') {
+        result[key] = scrub(val, depth + 1);
+      } else if (typeof val === 'string' && val.length > 500) {
+        result[key] = val.slice(0, 500) + '... [truncated]';
+      } else {
+        result[key] = val;
+      }
     }
   }
   return result;

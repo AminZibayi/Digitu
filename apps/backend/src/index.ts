@@ -22,6 +22,7 @@ app.use(cors());
 app.use(pinoHttp({
   logger,
   autoLogging: false,
+  quietReqLogger: true,
 }));
 
 app.use((req, res, next) => {
