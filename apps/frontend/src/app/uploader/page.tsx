@@ -9,10 +9,12 @@ interface RowStatus {
   index: number;
   title: string;
   status: string;
+  error?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
   success: 'موفق',
+  'success (dry-run)': 'موفق (آزمایشی)',
   failed: 'ناموفق',
   processing: 'در حال پردازش',
 };
@@ -21,6 +23,7 @@ export default function UploaderPage() {
   const [csvPath, setCsvPath]         = useState('');
   const [csvFile, setCsvFile]         = useState<File | null>(null);
   const [autoPublish, setAutoPublish] = useState(false);
+  const [dryRun, setDryRun]           = useState(false);
   const [running, setRunning]         = useState(false);
   const [rows, setRows]               = useState<RowStatus[]>([]);
   const [result, setResult]           = useState<string | null>(null);
@@ -37,7 +40,7 @@ export default function UploaderPage() {
     const unsubscribe = api.onUploadProgress((data: IpcProgressEvent) => {
       setRows((prev) => {
         const existing = prev.findIndex((r) => r.index === data.index);
-        const entry: RowStatus = { index: data.index, title: data.title, status: data.status };
+        const entry: RowStatus = { index: data.index, title: data.title, status: data.status, error: data.error };
         if (existing >= 0) {
           const next = [...prev];
           next[existing] = entry;
@@ -59,7 +62,7 @@ export default function UploaderPage() {
     setRows([]);
     setResult(null);
     try {
-      const res = await api.runUpload(csvPath, autoPublish, csvFile ?? undefined);
+      const res = await api.runUpload(csvPath, autoPublish, dryRun, csvFile ?? undefined);
       setResult(res.success
         ? `✅ تکمیل شد: ${res.results?.filter((r: any) => r.status === 'success').length ?? 0} مورد موفق.`
         : `❌ خطا: ${typeof res.error === 'string' ? res.error : res.error?.message ?? 'Upload failed'}`);
@@ -71,7 +74,7 @@ export default function UploaderPage() {
     } finally {
       setRunning(false);
     }
-  }, [csvPath, autoPublish, csvFile]);
+  }, [csvPath, autoPublish, dryRun, csvFile]);
 
   const handleBrowse = useCallback(async () => {
     const file = await api.pickCsvFile();
@@ -135,6 +138,18 @@ export default function UploaderPage() {
             انتشار خودکار پس از ایجاد پیش‌نویس
           </label>
         </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="dry-run"
+            checked={dryRun}
+            onChange={(e) => setDryRun(e.target.checked)}
+            className="rounded border-[var(--border)] bg-[var(--surface-alt)]"
+          />
+          <label htmlFor="dry-run" className="text-sm text-[var(--foreground)] cursor-pointer">
+            اجرای آزمایشی (بدون آپلود واقعی)
+          </label>
+        </div>
         {inputError && <p className="text-xs text-red-400">{inputError}</p>}
       </div>
 
@@ -170,6 +185,7 @@ export default function UploaderPage() {
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">محصول</th>
                 <th className="px-4 py-3">وضعیت</th>
+                <th className="px-4 py-3">خطا</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
@@ -180,6 +196,7 @@ export default function UploaderPage() {
                   <td className="px-4 py-3">
                     <span className={chipClass(row.status)}>{STATUS_LABELS[row.status] ?? row.status}</span>
                   </td>
+                  <td className="px-4 py-3 text-red-400 text-xs">{row.error || ''}</td>
                 </tr>
               ))}
             </tbody>

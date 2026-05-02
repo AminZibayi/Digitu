@@ -41,6 +41,7 @@ export interface IpcProgressEvent {
   total: number;
   title: string;
   status: string;
+  error?: string;
 }
 
 export interface DigikalaSettingsPayload {

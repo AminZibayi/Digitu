@@ -147,16 +147,24 @@ export async function pickCsvFile(): Promise<File | null> {
   });
 }
 
-async function runUploadBrowser(csvFile: File, autoPublish: boolean): Promise<{ success: boolean; results?: unknown[]; error?: string }> {
+async function runUploadBrowser(csvFile: File, autoPublish: boolean, dryRun: boolean): Promise<{ success: boolean; results?: unknown[]; error?: string }> {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('csvFile', csvFile);
     formData.append('autoPublish', String(autoPublish));
+    formData.append('dryRun', String(dryRun));
     fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData })
       .then(res => res.json())
       .then(resolve)
       .catch(reject);
   });
+}
+
+export async function parseUpload(csvFile: File) {
+  const formData = new FormData();
+  formData.append('csvFile', csvFile);
+  const res = await fetch(`${API_BASE}/api/upload/parse`, { method: 'POST', body: formData });
+  return await res.json();
 }
 
 export const api = {
@@ -198,17 +206,17 @@ export const api = {
     }
   },
 
-runUpload: async (csvPath: string, autoPublish?: boolean, csvFile?: File) => {
+runUpload: async (csvPath: string, autoPublish?: boolean, dryRun?: boolean, csvFile?: File, products?: any[]) => {
     if (isElectron) {
       return window.electronAPI!.runUpload(csvPath, autoPublish);
     }
     if (csvFile) {
-      return runUploadBrowser(csvFile, autoPublish ?? false);
+      return runUploadBrowser(csvFile, autoPublish ?? false, dryRun ?? false);
     }
     return fetchJson<{ success: boolean; results?: unknown[]; error?: string }>('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csvPath, autoPublish }),
+      body: JSON.stringify({ csvPath, autoPublish, dryRun, products }),
     });
   },
 
