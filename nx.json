@@ -5,12 +5,30 @@
       "cache": true,
       "dependsOn": ["^build"]
     },
+    "dev": {
+      "continuous": true
+    },
+    "web": {
+      "continuous": true
+    },
     "test": {
       "cache": true
     },
     "lint": {
       "cache": true
     }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": [],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/test-setup.[jt]s"
+    ]
   },
   "plugins": [
     {

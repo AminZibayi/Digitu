@@ -3,13 +3,47 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/backend/src",
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/jest.config.[jt]s",
+      "!{projectRoot}/src/test-setup.[jt]s",
+      "!{projectRoot}/test-setup.[jt]s"
+    ],
+    "no_artifacts": [
+      "default",
+      "!{projectRoot}/data/**/*",
+      "!{projectRoot}/logs/**/*"
+    ]
+  },
   "targets": {
     "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "apps/backend/dist",
+        "main": "apps/backend/src/main.ts",
+        "tsConfig": "apps/backend/tsconfig.json",
+        "assets": []
+      },
+      "configurations": {},
+      "parallelism": true,
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["no_artifacts"]
+    },
+    "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc",
+        "command": "tsx watch --ignore \"**/logs/**\" --ignore \"**/data/**\" src/main.ts",
         "cwd": "apps/backend"
-      }
+      },
+      "configurations": {},
+      "parallelism": true,
+      "continuous": true
     },
     "test": {
       "executor": "nx:run-commands",

@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint ."
+    "dev": "nx dev",
+    "build": "nx build",
+    "start": "nx serve",
+    "lint": "nx lint"
   },
   "dependencies": {
     "@digikala/branding": "workspace:*",

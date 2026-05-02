@@ -1,11 +1,11 @@
 {
   "name": "@digikala/backend",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "tsx watch --ignore \"**/logs/**\" --ignore \"**/data/**\" src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev": "nx dev",
+    "build": "nx build",
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@digikala/core": "workspace:*",

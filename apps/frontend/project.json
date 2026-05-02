@@ -11,16 +11,30 @@
         "outputPath": "apps/frontend/.next"
       }
     },
+    "dev": {
+      "executor": "@nx/next:server",
+      "options": {
+        "buildTarget": "build",
+        "dev": true
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "build:production",
+          "dev": false
+        }
+      }
+    },
     "serve": {
       "executor": "@nx/next:server",
       "options": {
-        "buildTarget": "frontend:build"
+        "buildTarget": "build",
+        "dev": false
       }
     },
     "export": {
       "executor": "@nx/next:export",
       "options": {
-        "buildTarget": "frontend:build"
+        "buildTarget": "build"
       }
     },
     "test": {
