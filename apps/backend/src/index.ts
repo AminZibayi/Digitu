@@ -18,21 +18,27 @@ import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreatio
 
 const app = express();
 app.use(cors());
+
 app.use(pinoHttp({
   logger,
   autoLogging: {
-    ignore: (req) => req.url === '/api/events' || req.url === '/api/logs/stream'
-  },
-  serializers: {
-    req: (req: any) => ({
-      method: req.method,
-      url: req.url,
-    }),
-    res: (res: any) => ({
-      statusCode: res.statusCode,
-    }),
+    ignore: (req) => req.url === '/api/events' || req.url === '/api/logs/stream',
   },
 }));
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info({
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      responseTime: duration,
+    }, 'request completed');
+  });
+  next();
+});
 app.use(express.json({ limit: '50mb' }));
 const upload = multer({ dest: os.tmpdir() });
 
