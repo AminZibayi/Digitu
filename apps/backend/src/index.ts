@@ -18,11 +18,20 @@ import { buildNormalizedSettingsPayload, parseUploadRequest, parseVariantCreatio
 
 const app = express();
 app.use(cors());
-app.use(pinoHttp({ 
+app.use(pinoHttp({
   logger,
   autoLogging: {
     ignore: (req) => req.url === '/api/events' || req.url === '/api/logs/stream'
-  }
+  },
+  serializers: {
+    req: (req: any) => ({
+      method: req.method,
+      url: req.url,
+    }),
+    res: (res: any) => ({
+      statusCode: res.statusCode,
+    }),
+  },
 }));
 app.use(express.json({ limit: '50mb' }));
 const upload = multer({ dest: os.tmpdir() });

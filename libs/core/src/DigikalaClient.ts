@@ -54,6 +54,15 @@ export class DigikalaClient {
     return String(bodyText || '').slice(0, 600);
   }
 
+  private sanitizeErrorMessage(message: string): string {
+    if (!message) return message;
+    const cookiePattern = /\[\s*\{[^}]*"name"\s*:/g;
+    if (cookiePattern.test(message)) {
+      return '[cookie data removed - likely passing array instead of string]';
+    }
+    return message;
+  }
+
   public async requestJson<T = any>(path: string, options: { method: string; body?: any; headers?: Record<string, string> }): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     let attempt = 0;
@@ -86,12 +95,13 @@ export class DigikalaClient {
         response = await fetch(url, fetchOptions);
         bodyText = await response.text();
       } catch (error: any) {
+        const sanitizedMsg = this.sanitizeErrorMessage(error.message);
         if (attempt <= this.maxRetries) {
-          logger.warn({ method: options.method, path, attempt, error: error.message }, 'API request network error, retrying');
+          logger.warn({ method: options.method, path, attempt, error: sanitizedMsg }, 'API request network error, retrying');
           await this.sleep(this.retryDelayMs * attempt);
           continue;
         }
-        throw new Error(`Network failed after retries for ${options.method} ${path}: ${error.message}`);
+        throw new Error(`Network failed after retries for ${options.method} ${path}: ${sanitizedMsg}`);
       }
 
       if (!response.ok) {
@@ -115,8 +125,8 @@ export class DigikalaClient {
         // If it was our forced error from previous block, rethrow as is
         if (error.message.startsWith('Application Error')) throw error;
         
-        logger.error({ method: options.method, path, error: error.message }, 'API response parse error');
-        throw new Error(`Invalid JSON for ${options.method} ${path}: ${error.message}`);
+        logger.error({ method: options.method, path, error: this.sanitizeErrorMessage(error.message) }, 'API response parse error');
+        throw new Error(`Invalid JSON for ${options.method} ${path}: ${this.sanitizeErrorMessage(error.message)}`);
       }
     }
   }
