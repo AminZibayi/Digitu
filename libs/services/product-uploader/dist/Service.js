@@ -103,7 +103,8 @@ class ProductUploaderService {
         };
         const brandId = Number(getString('brand_id'));
         const divisionId = Number(getString('division_id'));
-        const generalMefaId = Number(getString('general_mefa_id'));
+        const generalMefaIdRaw = getString('general_mefa_id');
+        const generalMefaId = generalMefaIdRaw === 'domestic' ? 893 : generalMefaIdRaw === 'imported' ? 894 : Number(generalMefaIdRaw);
         const model = getString('model');
         const titleFa = getString('title_fa');
         const imagePaths = parseStrings(getString('image_paths'));
@@ -115,7 +116,7 @@ class ProductUploaderService {
             throw new Error(`Row ${rowNumber}: invalid division_id`);
         }
         if (!Number.isInteger(generalMefaId) || generalMefaId <= 0) {
-            throw new Error(`Row ${rowNumber}: invalid general_mefa_id`);
+            throw new Error(`Row ${rowNumber}: invalid general_mefa_id. Must be 'domestic', 'imported', 893, or 894`);
         }
         if (!model) {
             throw new Error(`Row ${rowNumber}: missing model`);
