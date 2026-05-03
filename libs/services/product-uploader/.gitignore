@@ -1,4 +1,5 @@
 /node_modules
+dist/
 .env
 upload_results.json
 products-db.json
